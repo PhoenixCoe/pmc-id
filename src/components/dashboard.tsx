@@ -4,6 +4,7 @@ import { Foot } from './chrome';
 import { Ic } from './Ic';
 import { IdLockup } from './Logo';
 import { AppsPage, DataPage, HomePage, InfoPage, SecurityPage } from './pages';
+import { useId_ } from './state';
 import { ToolkitMenus } from './toolkit';
 import { WalletPage } from './wallet';
 import { keyToPath, linkClick } from '@/lib/route';
@@ -53,6 +54,7 @@ function HelpMenu() {
 }
 
 export function Dashboard({ tab }: { tab: string }) {
+  const { from, leave } = useId_();
   const t = TABS.find((x) => x[0] === tab) ?? TABS[0];
   const b = BAND[tab];
   return (
@@ -69,6 +71,7 @@ export function Dashboard({ tab }: { tab: string }) {
         <header className="tb">
           <h1 className="tb-title" key={tab}><Ic n={t[2]} s={26} /><span className="nl">{t[1]}</span><span className="ns">{SHORT[tab] ?? t[1]}</span></h1>
           <div className="tb-end">
+            {from ? <a className="tb-back" href={from.url} onClick={leave} aria-label={`Back to ${from.name}`}><Ic n="back" s={20} /><span>{from.name}</span></a> : null}
             <HelpMenu />
             <ToolkitMenus />
           </div>
