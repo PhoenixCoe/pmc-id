@@ -1,14 +1,22 @@
 <!-- Reauthentication. Paste this whole file into the Message body box. -->
-<div style="margin:0;padding:24px 12px;background:#FBF6EC;font-family:Arial,Helvetica,sans-serif;color:#171717">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;border:4px solid #171717;background:#FBF6EC">
-    <tr><td style="padding:14px 22px;background:#171717;color:#FBF6EC;font-size:26px;font-weight:bold;letter-spacing:1px">PMC ID</td></tr>
-    <tr><td style="padding:26px 22px 8px">
-      <p style="margin:0 0 10px;font-size:26px;font-weight:bold;line-height:1.15">Confirm it is you</p>
-      <p style="margin:0;font-size:16px;line-height:1.5">Type this code on the PMC ID page to change your password.</p>
-    </td></tr>
-    <tr><td style="padding:14px 22px 22px">
-      <div style="display:inline-block;padding:12px 18px;border:4px solid #171717;background:#E3EFE7;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:8px">{{ .Token }}</div>
-    </td></tr>
-    <tr><td style="padding:0 22px 24px;font-size:13px;line-height:1.5;color:#1A4934">If you did not ask for this, ignore this email and think about changing your password.</td></tr>
-  </table>
+<style>
+@font-face{font-family:'PMC Header';src:url('https://id.pmcstudios.uk/fonts/PMCHeader.woff2') format('woff2');font-weight:400;font-style:normal}
+@font-face{font-family:'PMC Font';src:url('https://id.pmcstudios.uk/fonts/PMCFont.woff2') format('woff2');font-weight:400;font-style:normal}
+</style>
+<div style="margin:0;padding:24px 12px;background:#FBF6EC;color:#171717">
+  <div style="max-width:488px;margin:0 auto;padding:0 8px 8px 0;background:#1A4934">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:4px solid #171717;background:#FBF6EC">
+      <tr><td bgcolor="#171717" style="background:#171717;line-height:0"><img src="https://id.pmcstudios.uk/img/email-header.png" width="472" height="88" alt="PMC ID" style="display:block;width:100%;height:auto;border:0;color:#FBF6EC;font-family:'PMC Header','Arial Narrow',Arial,sans-serif;font-size:28px;line-height:88px"></td></tr>
+      <tr><td style="padding:26px 22px 8px">
+        <p style="margin:0 0 10px;font-family:'PMC Header','Arial Narrow',Arial,sans-serif;font-size:36px;font-weight:normal;line-height:.95;text-transform:uppercase">Confirm it is you</p>
+        <p style="margin:0;font-family:'PMC Font','Courier New',monospace;font-size:16px;line-height:1.55">Type this code on the PMC ID page to change your password.</p>
+      </td></tr>
+      <tr><td style="padding:14px 22px 24px">
+        <div style="display:inline-block;padding:0 8px 8px 0;background:#171717">
+          <div style="padding:10px 18px 6px;border:4px solid #171717;background:#B49A57;font-family:'PMC Header','Arial Narrow',Arial,sans-serif;font-size:50px;line-height:1.1;letter-spacing:8px;color:#171717">{{ .Token }}</div>
+        </div>
+      </td></tr>
+      <tr><td style="padding:0 22px 24px;font-family:'PMC Font','Courier New',monospace;font-size:13px;line-height:1.5;color:#1A4934">If you did not ask for this, ignore this email and think about changing your password.</td></tr>
+    </table>
+  </div>
 </div>
