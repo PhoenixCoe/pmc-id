@@ -236,7 +236,7 @@ export function Create({ n }: { n: number }) {
             <PmcSelect id="gen" placeholder="Choose one" options={GENDERS} value={v.gender} onPick={(g) => { set('gender')(g); }} labelledBy="gl" invalid={!!errors['gen-btn']} />
             {errors['gen-btn'] ? <p className="err" role="alert">{errors['gen-btn']}</p> : null}
           </div>
-          <details className="why"><summary><Ic n="help" s={18} />Why we ask</summary><p>Your birthday keeps PMC apps right for your age. Your gender is only used for how apps talk to you. Nobody else sees either.</p></details>
+          <details className="why"><summary><Ic n="help" s={18} />Why we ask</summary><p>Your birthday helps PMC apps fit your age. Gender is optional and never changes what you are shown. Nobody else sees either.</p></details>
         </>
       )}
       {n === 3 && (

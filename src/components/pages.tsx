@@ -27,7 +27,6 @@ export function HomePage() {
   if (!me) return null;
   const todo: [string, string, string][] = [];
   if (!me.dob) todo.push(['Add your birthday', '#info', 'cake']);
-  if (!me.gender) todo.push(['Add your gender', '#info', 'tag']);
   if (!wallet.pin && hasWallet() && !needsPin()) todo.push(['Set a wallet PIN', '#wallet', 'lock']);
   return (
     <>
@@ -107,7 +106,7 @@ export function InfoPage() {
           <EdRow label="Gender" form="gender" onCancel={() => setEd(null)} onSubmit={() => { if (!g) return void fail('gen-btn', 'Pick one. "Rather not say" is fine.'); void save({ gender: g }, 'Saved.', 'gen-btn'); }}>
             <div className="f"><PmcSelect id="gen" placeholder="Choose one" options={GENDERS} value={g} onPick={(v) => { setG(v); clear(); }} invalid={!!errors['gen-btn']} />{errors['gen-btn'] ? <p className="err" role="alert">{errors['gen-btn']}</p> : null}</div>
           </EdRow>
-        ) : <Rw label="Gender" icon="tag" hint="Only used for how apps talk to you" val={me.gender || dim} act={<RowBtn label={me.gender ? 'Change' : 'Add'} onClick={() => open('gender')} />} />}
+        ) : <Rw label="Gender" icon="tag" hint="Optional. Never changes what you see" val={me.gender || dim} act={<RowBtn label={me.gender ? 'Change' : 'Add'} onClick={() => open('gender')} />} />}
         <Rw label="Email" icon="mail" hint="You sign in with this" val={me.email} />
         <input id="file" ref={file} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
       </Panel>
