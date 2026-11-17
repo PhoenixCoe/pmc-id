@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { forget, remember, savedList } from '@/lib/saved';
 import type { Saved } from '@/lib/saved';
 import { navigate, useRoute } from '@/lib/route';
-import { LIVE, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
+import { LIVE, clearFrom, readFrom, type From, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
 import type { AppRow, Handoff, Profile, Session } from '@/lib/supabase';
 import { lockWallet, restoreKey, setOwner, unlockWithPassword } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
@@ -21,6 +21,7 @@ interface Ctx {
   status: Status; session: Session | null;
   me: User | null; saved: Saved[]; forgetSaved: (email: string) => void;
   apps: AppRow[]; handoff: Handoff | null;
+  from: From | null; leave: () => void;
   prefill: string; setPrefill: (email: string) => void; pickAccount: (email: string) => void;
   draft: Draft; setDraft: (d: Draft) => void;
   wallet: WalletState; setWallet: (w: WalletState | ((w: WalletState) => WalletState)) => void; resetWallet: () => void;
@@ -53,6 +54,9 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const [apps, setApps] = useState<AppRow[]>([]);
   const [handoff, setHandoff] = useState<Handoff | null>(null);
   const [prefill, setPrefill] = useState('');
+  const [from, setFrom] = useState<From | null>(null);
+  useEffect(() => { setFrom(readFrom()); }, []);
+  const leave = useCallback(() => { clearFrom(); setFrom(null); }, []);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [wallet, setWallet] = useState<WalletState>(EMPTY_WALLET);
   const [notice, setNotice] = useState('');
@@ -87,7 +91,7 @@ export function IdProvider({ children }: { children: ReactNode }) {
 
   /* A sign in that ends by itself (it could not be renewed). */
   useEffect(() => {
-    const h = () => { if (!getSession() && meRef.current) { setSession(null); setMe(null); setSaved(savedList()); setStatus('out'); setNotice('Your sign in timed out. Sign in again.'); location.hash = 'signin'; } };
+    const h = () => { if (!getSession() && meRef.current) { setSession(null); setMe(null); setSaved(savedList()); setStatus('out'); setNotice('Your sign in timed out. Sign in again.'); navigate('signin'); } };
     window.addEventListener(SESSION_EVENT, h); return () => window.removeEventListener(SESSION_EVENT, h);
   }, []);
 
@@ -124,8 +128,8 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const pickAccount = useCallback((email: string) => { setPrefill(email); navigate('signin'); }, []);
 
   useEffect(() => { setNotice(''); window.scrollTo(0, 0); }, [hash]);
-  const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),
-    [status, session, me, saved, forgetSaved, apps, handoff, prefill, setPrefill, pickAccount, draft, wallet, notice, say, go, resetWallet, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps]);
+  const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, from, leave, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),
+    [status, session, me, saved, forgetSaved, apps, handoff, from, leave, prefill, setPrefill, pickAccount, draft, wallet, notice, say, go, resetWallet, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps]);
   return <C.Provider value={v}>{children}</C.Provider>;
 }
 export { C as IdContext };

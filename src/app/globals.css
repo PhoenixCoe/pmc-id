@@ -881,3 +881,9 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
   .foot { padding: 14px 12px; gap: 6px 12px; font-size: .85rem; }
   .foot-mark { display: none; }
 }
+
+/* a way back to the app that sent you here */
+.tb-back { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; color: var(--ink); border: 3px solid currentColor; background: transparent; font: 400 1.2rem/1 var(--d); text-transform: uppercase; letter-spacing: .03em; transition: background .1s, color .1s; }
+.tb-back:hover, .tb-back:focus-visible { background: var(--ink); color: var(--white); outline: none; }
+.foot-back { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; border-bottom: 2px solid currentColor; }
+@media (max-width: 760px) { .tb-back { width: 40px; padding: 0; justify-content: center; } .tb-back span { display: none; } }

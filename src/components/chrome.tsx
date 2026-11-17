@@ -1,4 +1,5 @@
 import { keyToPath, linkClick } from '@/lib/route';
+import { useId_ } from './state';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Ic } from './Ic';
@@ -15,10 +16,12 @@ export function Av({ u }: { u: Pick<User, 'img'> }) {
   );
 }
 
-export function Foot() {
+export function Foot({ back = false }: { back?: boolean }) {
+  const { from, leave } = useId_();
   return (
     <footer className="foot">
       <a className="foot-mark" href="https://pmcstudios.uk/" aria-label="PMC Studios"><Mark /></a>
+      {back && from ? <a className="foot-back" href={from.url} onClick={leave}><Ic n="back" s={16} />Back to {from.name}</a> : null}
       <span className="c">© 2026 PMC Studios</span>
       <a href="https://pmcstudios.uk/privacy">Privacy</a>
       <a href="https://pmcstudios.uk/terms">Terms</a>
@@ -80,7 +83,7 @@ export function AuthCard({ title, step, onSubmit, children }: { title: string; s
         </div>
         {step ? <div className="steps" role="img" aria-label={`Step ${step} of 6`}>{[1, 2, 3, 4, 5, 6].map((i) => <i key={i} className={i <= step ? 'on' : ''} />)}</div> : null}
       </main>
-      <Foot />
+      <Foot back />
     </div>
   );
 }

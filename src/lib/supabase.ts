@@ -202,3 +202,24 @@ export function handBack(h: Handoff, s: Session): void {
     location.replace(h.url + '#' + p.toString());
   } else window.postMessage({ pmc: 'session', app: h.id, state: h.state, session: s }, location.origin);
 }
+
+/* ---------- an app that sent the person here: a way back ---------- */
+export interface From { id: string; name: string; url: string }
+const FROM_KEY = 'pmc.id.from';
+/** Which PMC app the person came from: ?from=coe, or the page they clicked from. It is remembered for this tab, so it is still there after they sign in. */
+export function readFrom(): From | null {
+  try {
+    const hit = (id: string): From | null => { const a = APPS[id]; return a && a.url && Object.prototype.hasOwnProperty.call(APPS, id) ? { id, name: a.name, url: a.url } : null; };
+    let f: From | null = null;
+    const q = new URLSearchParams(location.search).get('from') || '';
+    if (q) f = hit(q);
+    if (!f && document.referrer) {
+      const o = new URL(document.referrer).origin;
+      if (o !== location.origin) f = (Object.keys(APPS).map(hit).find((x) => x && new URL(x.url).origin === o) as From | undefined) ?? null;
+    }
+    if (f) { sessionStorage.setItem(FROM_KEY, f.id); } else { const id = sessionStorage.getItem(FROM_KEY) || ''; f = id ? hit(id) : null; }
+    if (q) { const u = new URLSearchParams(location.search); u.delete('from'); history.replaceState(null, '', location.pathname + (u.toString() ? '?' + u.toString() : '')); }
+    return f;
+  } catch { return null; }
+}
+export function clearFrom(): void { try { sessionStorage.removeItem(FROM_KEY); } catch { /* ignore */ } }
