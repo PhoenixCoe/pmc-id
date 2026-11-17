@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useRef } from 'react';
-import type { User } from './state';
 import { useId_ } from './state';
 
 /* The account menu (pmc-account.js) and the apps menu (pmc-by.js) are the shared PMC toolkit: the same two files run in every PMC app,
@@ -19,17 +18,15 @@ export function whenToolkit(fn: () => void): () => void {
 }
 
 export function ToolkitMenus() {
-  const { me, others, setMe, setOthers, resetWallet, go } = useId_();
+  const { me, saved, signOut, setPrefill } = useId_();
   const acct = useRef<HTMLButtonElement>(null), by = useRef<HTMLSpanElement>(null);
-  const live = useRef({ me, others });
-  live.current = { me, others };
-  const swap = useRef((a: User) => { const c = live.current; setOthers([c.me as User]); setMe(a); });
-  swap.current = (a: User) => { const c = live.current; setOthers([c.me as User]); setMe(a); };
+  const live = useRef({ me, saved, signOut, setPrefill });
+  live.current = { me, saved, signOut, setPrefill };
   useEffect(() => whenToolkit(() => {
     if (acct.current) window.PmcAccount!.mount(acct.current, () => ({
-      user: live.current.me, others: live.current.others, manage: '#info', addAccount: '#signin',
-      onSignOut: () => { resetWallet(); go('choose'); },
-      onSwitch: (a: User) => swap.current(a),
+      user: live.current.me, others: live.current.saved, manage: '#info', addAccount: '#add',
+      onSignOut: () => { void live.current.signOut('choose'); },
+      onSwitch: (a: { email: string }) => { live.current.setPrefill(a.email); void live.current.signOut('signin'); },
     }));
     if (by.current) window.PmcBy!.mount(by.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps

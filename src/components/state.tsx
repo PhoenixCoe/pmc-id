@@ -1,28 +1,37 @@
 'use client';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
+import { forget, remember, savedList } from '@/lib/saved';
+import type { Saved } from '@/lib/saved';
+import { LIVE, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
+import type { AppRow, Handoff, Profile, Session } from '@/lib/supabase';
+import { lockWallet, restoreKey, setOwner, unlockWithPassword } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
 
 export interface User { name: string; first: string; last: string; email: string; img: string; dob: string; gender: string }
-export interface Draft { first: string; last: string; d: string; m: string; y: string; gender: string; email: string; reset: boolean }
-export interface Linked { id: 'coe' | 'mini' | 'tools'; name: string; when: string }
-export interface Device { id: number; name: string; cur?: boolean; when: string }
+export interface Draft { first: string; last: string; d: string; m: string; y: string; gender: string; email: string; pw: string }
 export interface WalletState { cards: Card[] | null; pin: string | null; fails: number; wait: number }
+export type Status = 'loading' | 'off' | 'out' | 'in';
 
-const PIC2 = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><rect width="60" height="60" fill="#337957"/><rect x="18" y="12" width="24" height="24" fill="#FBF6EC"/><rect x="12" y="40" width="36" height="20" fill="#1A4934"/></svg>');
-const user = (first: string, email: string, img = ''): User => ({ name: first, first, last: '', email, img, dob: '', gender: '' });
-export const EMPTY_DRAFT: Draft = { first: '', last: '', d: '', m: '', y: '', gender: '', email: '', reset: false };
+export const EMPTY_DRAFT: Draft = { first: '', last: '', d: '', m: '', y: '', gender: '', email: '', pw: '' };
 const EMPTY_WALLET: WalletState = { cards: null, pin: null, fails: 0, wait: 0 };
 
 interface Ctx {
-  me: User | null; setMe: (u: User | null) => void;
-  others: User[]; setOthers: (u: User[]) => void;
-  linked: Linked[]; setLinked: (l: Linked[]) => void;
-  devices: Device[]; setDevices: (d: Device[]) => void;
+  status: Status; session: Session | null;
+  me: User | null; saved: Saved[]; forgetSaved: (email: string) => void;
+  apps: AppRow[]; handoff: Handoff | null;
+  prefill: string; setPrefill: (email: string) => void; pickAccount: (email: string) => void;
   draft: Draft; setDraft: (d: Draft) => void;
   wallet: WalletState; setWallet: (w: WalletState | ((w: WalletState) => WalletState)) => void; resetWallet: () => void;
-  notice: string; say: (t: string) => void;
-  go: (hash: string) => void;
+  notice: string; say: (t: string) => void; go: (hash: string) => void;
+  /** Takes a sign in (the answer from the account service). With the password, the wallet is unlocked too. */
+  signedIn: (r: unknown, password?: string) => Promise<void>;
+  signOut: (toHash?: string) => Promise<void>;
+  /** The sign in was handed to an app on purpose: this tab keeps nothing, and stays where it is. */
+  endSession: () => Promise<void>;
+  saveProfile: (patch: Partial<Profile>) => Promise<void>;
+  setPassword: (token: string, password: string) => Promise<void>;
+  reloadApps: () => Promise<void>;
 }
 const C = createContext<Ctx | null>(null);
 export const useId_ = () => { const c = useContext(C); if (!c) throw new Error('no provider'); return c; };
@@ -36,11 +45,19 @@ export function useHash(): string {
   );
 }
 
+const toUser = (email: string, p: Profile): User => {
+  const first = p.name || email.split('@')[0].slice(0, 30);
+  return { name: `${first} ${p.last}`.trim(), first, last: p.last, email, img: p.img, dob: p.dob, gender: p.gender };
+};
+
 export function IdProvider({ children }: { children: ReactNode }) {
-  const [me, setMe] = useState<User | null>(user('Phoenix', 'phoenix@example.com'));
-  const [others, setOthers] = useState<User[]>([user('School', 'p.coe@school.example', PIC2)]);
-  const [linked, setLinked] = useState<Linked[]>([{ id: 'coe', name: 'Coe', when: 'Linked 12 Nov' }, { id: 'mini', name: 'Coe Mini', when: 'Linked 12 Nov' }, { id: 'tools', name: 'PMC Tools', when: 'Linked 14 Nov' }]);
-  const [devices, setDevices] = useState<Device[]>([{ id: 1, name: 'This browser', cur: true, when: 'Active now' }, { id: 2, name: 'Chrome on Windows', when: 'Yesterday' }]);
+  const [status, setStatus] = useState<Status>('loading');
+  const [session, setSession] = useState<Session | null>(null);
+  const [me, setMe] = useState<User | null>(null);
+  const [saved, setSaved] = useState<Saved[]>([]);
+  const [apps, setApps] = useState<AppRow[]>([]);
+  const [handoff, setHandoff] = useState<Handoff | null>(null);
+  const [prefill, setPrefill] = useState('');
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [wallet, setWallet] = useState<WalletState>(EMPTY_WALLET);
   const [notice, setNotice] = useState('');
@@ -48,8 +65,72 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const go = useCallback((h: string) => { location.hash = h; }, []);
   const resetWallet = useCallback(() => setWallet(EMPTY_WALLET), []);
   const hash = useHash();
+  const meRef = useRef<User | null>(null); meRef.current = me;
+
+  /* The saved accounts exclude the one that is signed in. */
+  const others = useCallback((email?: string) => savedList().filter((a) => a.email.toLowerCase() !== (email ?? '').toLowerCase()), []);
+
+  const load = useCallback(async (s: Session) => {
+    setOwner(s.uid); void restoreKey();
+    const [u, p, a] = await Promise.all([getUser(), readProfile().catch(() => ({ name: '', last: '', dob: '', gender: '', img: '' }) as Profile), listApps().catch(() => [] as AppRow[])]);
+    const email = String(u.email || s.email);
+    if (u.id && u.id !== s.uid) { s.uid = u.id; saveSession(s); setOwner(u.id); }
+    const user = toUser(email, p);
+    remember({ email, name: user.first, img: user.img });
+    setSession(getSession() ?? s); setMe(user); setApps(a); setSaved(others(email)); setStatus('in');
+  }, [others]);
+
+  /* On the first load: take up a sign in that is still in this tab, and see whether an app is asking for one. */
+  useEffect(() => {
+    setHandoff(readHandoff());
+    const l = savedList();
+    if (!LIVE) { setStatus('off'); return; }
+    const s = getSession();
+    if (!s) { setSaved(l); setStatus('out'); return; }
+    load(s).catch(() => { saveSession(null); setSaved(l); setStatus('out'); });
+  }, [load]);
+
+  /* A sign in that ends by itself (it could not be renewed). */
+  useEffect(() => {
+    const h = () => { if (!getSession() && meRef.current) { setSession(null); setMe(null); setSaved(savedList()); setStatus('out'); setNotice('Your sign in timed out. Sign in again.'); location.hash = 'signin'; } };
+    window.addEventListener(SESSION_EVENT, h); return () => window.removeEventListener(SESSION_EVENT, h);
+  }, []);
+
+  const signedIn = useCallback(async (r: unknown, password?: string) => {
+    const s = toSession(r as Record<string, unknown>);
+    saveSession(s); setOwner(s.uid);
+    if (password) { try { await unlockWithPassword(password); } catch { /* the wallet stays locked */ } }
+    await load(s);
+  }, [load]);
+
+  const signOut = useCallback(async (toHash = 'choose') => {
+    await signOutOf('local');
+    saveSession(null); await lockWallet();
+    setSession(null); setMe(null); setApps([]); setWallet(EMPTY_WALLET); setDraft(EMPTY_DRAFT); setSaved(savedList()); setStatus('out');
+    location.hash = toHash;
+  }, []);
+
+  const endSession = useCallback(async () => {
+    saveSession(null, true); await lockWallet();
+    setSession(null); setMe(null); setApps([]); setWallet(EMPTY_WALLET); setDraft(EMPTY_DRAFT); setSaved(savedList()); setStatus('out');
+  }, []);
+
+  const saveProfile = useCallback(async (patch: Partial<Profile>) => {
+    const m = meRef.current, s = getSession(); if (!m || !s) return;
+    await writeProfile(s.uid, patch);
+    const first = patch.name ?? m.first, last = patch.last ?? m.last;
+    const next: User = { ...m, first, last, name: `${first} ${last}`.trim(), img: patch.img ?? m.img, dob: patch.dob ?? m.dob, gender: patch.gender ?? m.gender };
+    setMe(next); remember({ email: next.email, name: next.first, img: next.img });
+  }, []);
+
+  const setPassword = useCallback(async (token: string, password: string) => { await setPasswordWith(token, password); }, []);
+  const reloadApps = useCallback(async () => { setApps(await listApps().catch(() => [])); }, []);
+  const forgetSaved = useCallback((email: string) => { setSaved(forget(email).filter((a) => a.email.toLowerCase() !== (meRef.current?.email ?? '').toLowerCase())); }, []);
+  const pickAccount = useCallback((email: string) => { setPrefill(email); location.hash = 'signin'; }, []);
+
   useEffect(() => { setNotice(''); window.scrollTo(0, 0); }, [hash]);
-  const v = useMemo(() => ({ me, setMe, others, setOthers, linked, setLinked, devices, setDevices, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go }), [me, others, linked, devices, draft, wallet, notice, say, go, resetWallet]);
+  const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),
+    [status, session, me, saved, forgetSaved, apps, handoff, prefill, setPrefill, pickAccount, draft, wallet, notice, say, go, resetWallet, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps]);
   return <C.Provider value={v}>{children}</C.Provider>;
 }
 export { C as IdContext };

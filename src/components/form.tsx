@@ -122,11 +122,12 @@ export function PmcSelect({ id, placeholder, options, value, onPick, labelledBy,
 }
 
 /** Six boxes for the emailed code. A full set submits by itself. */
-export function CodeBoxes({ onFull, invalid, resetKey }: { onFull: (code: string) => void; invalid?: boolean; resetKey: number }) {
+export function CodeBoxes({ onFull, onChange, invalid, resetKey }: { onFull?: (code: string) => void; onChange?: (code: string) => void; invalid?: boolean; resetKey: number }) {
   const [vals, setVals] = useState(['', '', '', '', '', '']);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  useEffect(() => { setVals(['', '', '', '', '', '']); refs.current[0]?.focus(); }, [resetKey]);
-  const put = (next: string[], i: number) => { setVals(next); if (next.every(Boolean)) onFull(next.join('')); else refs.current[i]?.focus(); };
+  useEffect(() => { setVals(['', '', '', '', '', '']); onChange?.(''); refs.current[0]?.focus(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
+  const put = (next: string[], i: number) => { setVals(next); onChange?.(next.every(Boolean) ? next.join('') : ''); if (next.every(Boolean)) onFull?.(next.join('')); else refs.current[i]?.focus(); };
   return (
     <div className="code" role="group" aria-label="6-digit code">
       {vals.map((v, i) => (
