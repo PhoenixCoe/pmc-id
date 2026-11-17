@@ -4,10 +4,13 @@ import { Choose, Create, Going, Off, Reset, SignIn } from './auth';
 import { Dashboard, TABS } from './dashboard';
 import { IdProvider, useHash, useId_ } from './state';
 import { whenToolkit } from './toolkit';
+import { fixOldHash } from '@/lib/route';
 
 function Screen() {
   const { status, me, saved, handoff, go, signOut } = useId_();
   const h = useHash();
+  useEffect(() => { fixOldHash(); }, []);
+  useEffect(() => { if (new URLSearchParams(location.search).get('add') === '1') go('add'); }, [go]);
   const isTab = TABS.some((t) => t[0] === h);
   const m = /^create-([1-6])$/.exec(h);
   const inn = status === 'in' && !!me;

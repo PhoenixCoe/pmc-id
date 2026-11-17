@@ -862,3 +862,22 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
   .rw:not(.ed) > .rw-v:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) { .rw.ed > * { margin-left: 0; justify-self: stretch; } .rw.ed .rw-l { margin-bottom: 4px; } }
+
+/* ---------- Phones: only what is needed ---------- */
+@media (max-width: 760px) {
+  /* sign in and create: a slim logo strip, the question is the only title */
+  .split-l { padding: 14px 18px; min-height: 0; gap: 0; }
+  .split-l h1 { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .split-l .mark, .split-logo .mark { width: 54px; }
+  .split-l .ht { width: 150px; opacity: .5; }
+  .split-r { padding: 18px; }
+  .steps { margin-top: 14px; }
+  /* app pages */
+  .rw-ic:not(.logo) { display: none; }
+  .rw:not(.ed) > .rw-v { margin-left: 0; max-width: 100%; }
+  .page #pg .panel:only-child > h2 { display: none; }
+  .panel > h2 { font-size: 1.2rem; padding: 10px 14px; }
+  .addcard { aspect-ratio: 2.4; }
+  .foot { padding: 14px 12px; gap: 6px 12px; font-size: .85rem; }
+  .foot-mark { display: none; }
+}

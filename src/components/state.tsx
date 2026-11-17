@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 import { forget, remember, savedList } from '@/lib/saved';
 import type { Saved } from '@/lib/saved';
+import { navigate, useRoute } from '@/lib/route';
 import { LIVE, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
 import type { AppRow, Handoff, Profile, Session } from '@/lib/supabase';
 import { lockWallet, restoreKey, setOwner, unlockWithPassword } from '@/lib/wallet';
@@ -36,14 +37,8 @@ interface Ctx {
 const C = createContext<Ctx | null>(null);
 export const useId_ = () => { const c = useContext(C); if (!c) throw new Error('no provider'); return c; };
 
-/** The address after the #, as a store, so the screen changes when it does. */
-export function useHash(): string {
-  return useSyncExternalStore(
-    (cb) => { window.addEventListener('hashchange', cb); return () => window.removeEventListener('hashchange', cb); },
-    () => location.hash.slice(1),
-    () => '',
-  );
-}
+/** The screen the address bar shows, as a store, so the screen changes when it does. */
+export const useHash = useRoute;
 
 const toUser = (email: string, p: Profile): User => {
   const first = p.name || email.split('@')[0].slice(0, 30);
@@ -62,7 +57,7 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const [wallet, setWallet] = useState<WalletState>(EMPTY_WALLET);
   const [notice, setNotice] = useState('');
   const say = useCallback((t: string) => setNotice(t), []);
-  const go = useCallback((h: string) => { location.hash = h; }, []);
+  const go = useCallback((h: string) => { navigate(h); }, []);
   const resetWallet = useCallback(() => setWallet(EMPTY_WALLET), []);
   const hash = useHash();
   const meRef = useRef<User | null>(null); meRef.current = me;
@@ -107,7 +102,7 @@ export function IdProvider({ children }: { children: ReactNode }) {
     await signOutOf('local');
     saveSession(null); await lockWallet();
     setSession(null); setMe(null); setApps([]); setWallet(EMPTY_WALLET); setDraft(EMPTY_DRAFT); setSaved(savedList()); setStatus('out');
-    location.hash = toHash;
+    navigate(toHash);
   }, []);
 
   const endSession = useCallback(async () => {
@@ -126,7 +121,7 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const setPassword = useCallback(async (token: string, password: string) => { await setPasswordWith(token, password); }, []);
   const reloadApps = useCallback(async () => { setApps(await listApps().catch(() => [])); }, []);
   const forgetSaved = useCallback((email: string) => { setSaved(forget(email).filter((a) => a.email.toLowerCase() !== (meRef.current?.email ?? '').toLowerCase())); }, []);
-  const pickAccount = useCallback((email: string) => { setPrefill(email); location.hash = 'signin'; }, []);
+  const pickAccount = useCallback((email: string) => { setPrefill(email); navigate('signin'); }, []);
 
   useEffect(() => { setNotice(''); window.scrollTo(0, 0); }, [hash]);
   const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),

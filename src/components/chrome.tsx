@@ -1,3 +1,4 @@
+import { keyToPath, linkClick } from '@/lib/route';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Ic } from './Ic';
@@ -84,5 +85,5 @@ export function AuthCard({ title, step, onSubmit, children }: { title: string; s
   );
 }
 
-export const BackLink = ({ to }: { to: string }) => <a className="btn" href={`#${to}`}><Ic n="back" />Back</a>;
+export const BackLink = ({ to }: { to: string }) => <a className="btn" href={keyToPath(to)} onClick={(e) => linkClick(e, to)}><Ic n="back" />Back</a>;
 export const Acts = ({ back, label }: { back: ReactNode; label: string }) => <div className="acts">{back}<button className="btn primary" type="submit">{label}</button></div>;

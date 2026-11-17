@@ -34,7 +34,7 @@ Numbered steps are in **DEPLOY.md** (GitHub Pages, accounts.pmcstudios.uk).
 | `npm run check` | Checks the live site is set up safely (`node check-setup.mjs`) |
 
 ## Where things are
-- `src/app/`: the page, layout (security policy, scripts) and `globals.css` (the shared PMC styles and fonts)
+- `src/app/`: one catch-all page that serves every address (`/signin/`, `/security/`, `/create/name/` ... listed in `src/lib/paths.ts`), layout (security policy, scripts) and `globals.css` (the shared PMC styles and fonts)
 - `src/components/`: sign in and create screens (`auth.tsx`), the dashboard and its pages, the wallet
 - `src/lib/`: validation, the encrypted wallet, icons, logos
 - `public/js/`: the account menu, apps menu and logos shared with other PMC apps

@@ -24,7 +24,7 @@ export function ToolkitMenus() {
   live.current = { me, saved, signOut, setPrefill };
   useEffect(() => whenToolkit(() => {
     if (acct.current) window.PmcAccount!.mount(acct.current, () => ({
-      user: live.current.me, others: live.current.saved, manage: '#info', addAccount: '#add',
+      user: live.current.me, others: live.current.saved, manage: '/info/', addAccount: '/add/',
       onSignOut: () => { void live.current.signOut('choose'); },
       onSwitch: (a: { email: string }) => { live.current.setPrefill(a.email); void live.current.signOut('signin'); },
     }));

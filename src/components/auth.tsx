@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthCard, Acts, Av, BackLink } from './chrome';
 import { CodeBoxes, Dob, Field, Meter, PmcSelect, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
+import { keyToPath, linkClick } from '@/lib/route';
 import { useId_, EMPTY_DRAFT } from './state';
 import { ApiError, handBack, getSession, recover, resendSignup, saveSession, sayErr, setPasswordWith, signIn, signUp, toSession, verifyCode, writeProfile } from '@/lib/supabase';
 import { EMAIL, GENDERS, pad2, realDate, strength } from '@/lib/validate';
@@ -53,8 +54,8 @@ export function Choose() {
           </div>
         ))}
       </div>
-      <a className="another" href="#signin" onClick={() => { if (me) void signOut('signin'); }}><Ic n="plus" />Use another account</a>
-      <p className="or">or</p><p className="mid"><a className="textlink" href="#create-1">Create a PMC ID</a></p>
+      <a className="another" href="/signin/" onClick={(e) => { if (me) { e.preventDefault(); void signOut('signin'); } else linkClick(e, 'signin'); }}><Ic n="plus" />Use another account</a>
+      <p className="or">or</p><p className="mid"><a className="textlink" href={keyToPath('create-1')} onClick={(e) => linkClick(e, 'create-1')}>Create a PMC ID</a></p>
     </AuthCard>
   );
 }
@@ -90,7 +91,7 @@ export function SignIn() {
       <Field id="em" label="Email" error={errors.em}><input id="em" ref={emRef} type="email" autoComplete="username" spellCheck={false} value={em} onChange={(e) => { setEm(e.target.value); clear('em'); }} {...bad('em')} /></Field>
       <Field id="pw" label="Password" error={errors.pw}><PwInput id="pw" inputRef={pwRef} auto="current-password" value={pw} onChange={(v) => { setPw(v); clear('pw'); }} invalid={!!errors.pw} /></Field>
       {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}
-      <p><a className="textlink" href="#reset">Forgot your password?</a></p>
+      <p><a className="textlink" href="/reset/" onClick={(e) => linkClick(e, 'reset')}>Forgot your password?</a></p>
       <Acts back={<BackLink to="choose" />} label={busy ? 'Signing in…' : 'Sign in'} />
     </AuthCard>
   );
@@ -212,7 +213,7 @@ export function Create({ n }: { n: number }) {
   const again = () => { if (left > 0) return; resendSignup(draft.email).then(() => { startCool(); setCodeKey(codeKey + 1); setSent('New code sent. The old one no longer works.'); }, (e) => fail('code', sayErr(e))); };
 
   const label = n === 5 ? (busy ? 'Creating…' : 'Create my PMC ID') : 'Next';
-  const back = n === 1 ? <a className="textlink" href="#choose">I already have one</a> : <BackLink to={'create-' + (n - 1)} />;
+  const back = n === 1 ? <a className="textlink" href="/" onClick={(e) => linkClick(e, 'choose')}>I already have one</a> : <BackLink to={'create-' + (n - 1)} />;
 
   return (
     <AuthCard title="Create your PMC ID" step={n} onSubmit={() => next()}>
@@ -257,9 +258,9 @@ export function Create({ n }: { n: number }) {
         <>
           <h2>Check it all</h2>
           <div className="review"><Av u={{ img: '' }} /><dl>
-            <div><dt>Name</dt><dd>{`${draft.first} ${draft.last}`.trim()} <a className="edit" href="#create-1"><Ic n="pen" s={14} />Change</a></dd></div>
-            <div><dt>Email</dt><dd>{draft.email} <a className="edit" href="#create-3"><Ic n="pen" s={14} />Change</a></dd></div>
-            <div><dt>Birthday</dt><dd>{`${draft.d}/${draft.m}/${draft.y}`} <a className="edit" href="#create-2"><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Name</dt><dd>{`${draft.first} ${draft.last}`.trim()} <a className="edit" href={keyToPath('create-1')} onClick={(e) => linkClick(e, 'create-1')}><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Email</dt><dd>{draft.email} <a className="edit" href={keyToPath('create-3')} onClick={(e) => linkClick(e, 'create-3')}><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Birthday</dt><dd>{`${draft.d}/${draft.m}/${draft.y}`} <a className="edit" href={keyToPath('create-2')} onClick={(e) => linkClick(e, 'create-2')}><Ic n="pen" s={14} />Change</a></dd></div>
           </dl></div>
           <p className="hint">Next we email you a code to check the address is yours.</p>
           {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}

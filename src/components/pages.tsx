@@ -11,6 +11,7 @@ import { exportData, deleteMe, fileToPic, reauthenticate, sayErr, signIn, saveSe
 import type { ApiError } from '@/lib/supabase';
 import { forget } from '@/lib/saved';
 import { changePassword as rewrapWallet, hasWallet, needsPin, wipeWallet } from '@/lib/wallet';
+import { keyToPath, linkClick } from '@/lib/route';
 import { GENDERS, pad2, realDate, strength } from '@/lib/validate';
 
 const dim = <span className="dim">Not set</span>;
@@ -26,14 +27,14 @@ export function HomePage() {
   usePaint('.me', me?.img ?? '', true);
   if (!me) return null;
   const todo: [string, string, string][] = [];
-  if (!me.dob) todo.push(['Add your birthday', '#info', 'cake']);
-  if (!wallet.pin && hasWallet() && !needsPin()) todo.push(['Set a wallet PIN', '#wallet', 'lock']);
+  if (!me.dob) todo.push(['Add your birthday', 'info', 'cake']);
+  if (!wallet.pin && hasWallet() && !needsPin()) todo.push(['Set a wallet PIN', 'wallet', 'lock']);
   return (
     <>
       <section className="me" aria-label="You">
         <span className="dots" aria-hidden="true"><i /><i /></span>
         <Av u={me} /><span className="who"><b>{me.name}</b><small>{me.email}</small></span>
-        <a className="btn-ic pen" href="#info" aria-label="Change your name and picture"><Ic n="pen" /></a>
+        <a className="btn-ic pen" href="/info/" onClick={(e) => linkClick(e, 'info')} aria-label="Change your name and picture"><Ic n="pen" /></a>
       </section>
       <section className="panel"><h2>Open an app</h2>
         {OPEN.map((a) => (
@@ -44,8 +45,8 @@ export function HomePage() {
       </section>
       {todo.length ? (
         <section className="panel"><h2>To finish</h2>
-          {todo.map(([t, href, icon]) => (
-            <a key={t} className="rw todo-r" href={href}>
+          {todo.map(([t, k, icon]) => (
+            <a key={t} className="rw todo-r" href={keyToPath(k)} onClick={(e) => linkClick(e, k)}>
               <span className="rw-l"><span className="rw-ic" aria-hidden="true"><Ic n={icon} s={20} /></span><span className="rw-t"><b>{t}</b></span></span><span /><span className="go"><Ic n="arrow" s={18} /></span>
             </a>
           ))}
