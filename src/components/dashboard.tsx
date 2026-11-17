@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Foot } from './chrome';
 import { Ic } from './Ic';
 import { Mark } from './Logo';
@@ -10,13 +10,16 @@ import { WalletPage } from './wallet';
 import { keyToPath, linkClick } from '@/lib/route';
 
 export const TABS: [string, string, string][] = [
-  ['home', 'Home', 'home'], ['info', 'Personal info', 'user'], ['security', 'Security', 'lock'],
-  ['apps', 'Linked apps', 'link'], ['wallet', 'Wallet', 'wallet'], ['data', 'Data and privacy', 'shield'],
+  ['home', 'Home', 'home'], ['info', 'Personal info', 'user'],
+  ['security', 'Security', 'lock'],
+  ['apps', 'Linked apps', 'link'], ['wallet', 'Wallet', 'wallet'],
+  ['data', 'Data and privacy', 'shield'],
 ];
 const SHORT: Record<string, string> = { info: 'Info', apps: 'Apps', data: 'Data' };
 const NOTE: Record<string, string> = {
-  info: 'What PMC apps show next to your name.', security: 'How you sign in, and where.', apps: 'Where your PMC ID is used.',
-  wallet: 'Cards that PMC sites can fill in for you.', data: 'Take a copy of your data, or delete your PMC ID.',
+  info: 'What PMC apps show next to your name.', security: 'How you sign in, where, and what has happened.',
+  apps: 'Where your PMC ID is used.', wallet: 'Cards that PMC sites can fill in for you, and what you pay for.',
+  data: 'Take a copy of your data, or delete your PMC ID.',
 };
 const HELP: [string, string, string][] = [
   ['Change my password', 'security', 'key'], ['Change my name or picture', 'info', 'user'], ['Add a card', 'wallet', 'wallet'],
@@ -48,8 +51,30 @@ function HelpMenu() {
   );
 }
 
+/** The green block behind the open tab. It slides to whichever one is clicked. */
+function useSlide(tab: string) {
+  const nav = useRef<HTMLElement>(null), bar = useRef<HTMLSpanElement>(null), first = useRef(true);
+  useLayoutEffect(() => {
+    const place = () => {
+      const n = nav.current, b = bar.current, a = n?.querySelector<HTMLElement>('a[aria-current]');
+      if (!n || !b || !a) return;
+      b.style.transition = first.current ? 'none' : '';
+      b.style.width = a.offsetWidth + 'px'; b.style.height = a.offsetHeight + 'px';
+      b.style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`;
+      b.style.opacity = '1';
+      if (first.current) { void b.offsetWidth; first.current = false; }
+    };
+    place();
+    window.addEventListener('resize', place);
+    const f = document.fonts?.ready; f?.then(place).catch(() => undefined);
+    return () => window.removeEventListener('resize', place);
+  }, [tab]);
+  return { nav, bar };
+}
+
 export function Dashboard({ tab }: { tab: string }) {
   const { from, leave } = useId_();
+  const { nav, bar } = useSlide(tab);
   const t = TABS.find((x) => x[0] === tab) ?? TABS[0];
   return (
     <div className="dash2">
@@ -62,9 +87,10 @@ export function Dashboard({ tab }: { tab: string }) {
         </div>
       </header>
       <div className="gw">
-        <nav className="gnav" aria-label="PMC ID">
+        <nav className="gnav" aria-label="PMC ID" ref={nav}>
+          <span className="slide" ref={bar} aria-hidden="true" />
           {TABS.map((x) => (
-            <a key={x[0]} href={keyToPath(x[0])} onClick={(e) => linkClick(e, x[0])} aria-current={x[0] === tab ? 'page' : undefined}><Ic n={x[2]} s={24} /><span className="nl">{x[1]}</span><span className="ns">{SHORT[x[0]] ?? x[1]}</span></a>
+            <a key={x[0]} href={keyToPath(x[0])} title={x[1]} onClick={(e) => linkClick(e, x[0])} aria-current={x[0] === tab ? 'page' : undefined}><Ic n={x[2]} s={24} /><span className="nl">{x[1]}</span><span className="ns">{SHORT[x[0]] ?? x[1]}</span></a>
           ))}
         </nav>
         <main className="gm" key={tab}>

@@ -12,7 +12,7 @@ export const APPS: Record<string, { name: string; url?: string; extension?: bool
   coe: { name: 'Coe', url: 'https://coe.pmcstudios.uk/' },
   mini: { name: 'Coe Mini', extension: true },
   tools: { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/' },
-  apps: { name: 'PMC Tools', url: 'https://apps.pmcstudios.uk/' },
+  apps: { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/' },
   studios: { name: 'PMC Studios', url: 'https://pmcstudios.uk/' },
 };
 
@@ -143,10 +143,22 @@ export async function writeProfile(uid: string, patch: Partial<Profile>): Promis
   await authed('/rest/v1/profiles?on_conflict=user_id', { body: { user_id: uid, data: d, updated: new Date(now).toISOString() }, prefer: 'resolution=merge-duplicates,return=minimal' });
 }
 
-export interface AppRow { app: string; label: string; pmc: boolean; last_at: string | null }
+export interface AppRow { app: string; label: string; pmc: boolean; first_at?: string | null; last_at: string | null }
 export async function listApps(): Promise<AppRow[]> {
   const rows = await authed<AppRow[]>('/rest/v1/app_access?select=app,label,pmc,first_at,last_at&order=last_at.desc&limit=50', { method: 'GET' });
-  return Array.isArray(rows) ? rows.filter((r) => r && typeof r.app === 'string').map((r) => ({ app: r.app, label: String(r.label || r.app).slice(0, 60), pmc: r.pmc !== false, last_at: r.last_at ?? null })) : [];
+  return Array.isArray(rows) ? rows.filter((r) => r && typeof r.app === 'string').map((r) => ({ app: r.app, label: String(r.label || r.app).slice(0, 60), pmc: r.pmc !== false, first_at: r.first_at ?? null, last_at: r.last_at ?? null })) : [];
+}
+/** When your name and picture were last changed (kept in the profile row), for the Activity page. */
+export async function readStamps(): Promise<{ name: number; img: number }> {
+  const d = await rawProfile();
+  const n = (v: unknown) => (typeof v === 'number' && v > 0 ? v : 0);
+  return { name: n(obj(d.about).at), img: n(obj(d.avatar).at) };
+}
+export interface Plan { plan: string; status: string; period_end: string | null }
+/** Coe's Pro plan, if there is one. Only the owner can read it. */
+export async function readPlan(): Promise<Plan | null> {
+  const rows = await authed<Plan[]>('/rest/v1/subs?select=plan,status,period_end&limit=1', { method: 'GET' });
+  return Array.isArray(rows) && rows[0] ? { plan: String(rows[0].plan || 'pro'), status: String(rows[0].status || ''), period_end: rows[0].period_end ?? null } : null;
 }
 export const deleteMe = () => authed('/rest/v1/rpc/pmc_delete_me', { body: {} });
 

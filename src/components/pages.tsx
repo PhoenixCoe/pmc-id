@@ -7,7 +7,7 @@ import { AppLogo } from './Logo';
 import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
 import { usePaint } from './toolkit';
-import { exportData, deleteMe, fileToPic, reauthenticate, sayErr, signIn, saveSession, toSession, authed, signOutOf } from '@/lib/supabase';
+import { exportData, deleteMe, fileToPic, getUser, readStamps, reauthenticate, sayErr, signIn, saveSession, toSession, authed, signOutOf } from '@/lib/supabase';
 import type { ApiError } from '@/lib/supabase';
 import { forget } from '@/lib/saved';
 import { changePassword as rewrapWallet, hasWallet, needsPin, wipeWallet } from '@/lib/wallet';
@@ -203,6 +203,7 @@ export function SecurityPage() {
         <Rw label={dev.name} icon={dev.phone ? 'mobile' : 'laptop'} hint="Active now" act={<span className="btns"><span className="tag">This device</span><RowBtn label="Sign out" onClick={() => void signOut('choose')} /></span>} />
         <Rw label="Every other device" icon="lock" hint="Ends your PMC ID sign in on all of them" act={<RowBtn label="Sign them out" onClick={() => void others()} />} />
       </Panel>
+      <RecentActivity />
     </>
   );
 }
@@ -273,3 +274,36 @@ export function DataPage() {
     </>
   );
 }
+
+/* ---------- Activity ---------- */
+const when = (t: number) => new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+interface Ev { at: number; t: string; icon: string }
+function RecentActivity() {
+  const { apps } = useId_();
+  const [ev, setEv] = useState<Ev[] | null>(null), [bad, setBad] = useState(false);
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      try {
+        const [u, st] = await Promise.all([getUser(), readStamps().catch(() => ({ name: 0, img: 0 }))]);
+        const list: Ev[] = [];
+        const add = (v: unknown, t: string, icon: string) => { const at = typeof v === 'number' ? v : Date.parse(String(v || '')); if (at > 0) list.push({ at, t, icon }); };
+        add(u.created_at, 'PMC ID made', 'user');
+        add(u.last_sign_in_at, 'Signed in', 'key');
+        add(u.user_metadata?.pw_changed_at, 'Password changed', 'lock');
+        add(st.name, 'Name changed', 'pen');
+        add(st.img, 'Picture changed', 'image');
+        apps.forEach((a) => add(a.first_at, `Started using ${a.label}`, 'link'));
+        list.sort((a, b) => b.at - a.at);
+        if (on) setEv(list.slice(0, 30));
+      } catch { if (on) setBad(true); }
+    })();
+    return () => { on = false; };
+  }, [apps]);
+  return (
+    <Panel title="Recent activity">
+      {bad ? <p className="hint">This could not be loaded. Try again in a moment.</p> : ev === null ? <p className="hint">Loading…</p> : ev.map((e) => <Rw key={e.t + e.at} label={e.t} icon={e.icon} hint={when(e.at)} />)}
+    </Panel>
+  );
+}
+

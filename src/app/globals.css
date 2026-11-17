@@ -841,6 +841,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
   .nav a[aria-current=page] .ns { font-size: .8rem; }
 }
 @media (max-width: 760px) { .rw .dots-t, .rw .tag { display: none; } .rw-t b { overflow-wrap: anywhere; } }
+@media (max-width: 900px) { .rw.keep .rw-t small { display: block; } }
 @media (max-width: 760px) {
   .help { position: static; }
   .help-pop { position: fixed; top: 62px; left: 12px; right: 12px; width: auto; }
@@ -903,12 +904,15 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 .gt .tb-help:focus-visible { box-shadow: 4px 4px 0 var(--g1) !important; }
 .gw { flex: 1; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: clamp(26px, 4vw, 56px); width: min(1260px, 100%); margin: 0 auto; padding: clamp(24px, 4vw, 46px) clamp(14px, 3vw, 40px) clamp(30px, 5vw, 60px); box-sizing: border-box; align-items: start; }
 .gnav { display: grid; gap: 10px; position: sticky; top: 108px; }
-.gnav a { display: flex; align-items: center; gap: 14px; padding: 13px 15px; font: 400 1.45rem/1 var(--d); text-transform: uppercase; letter-spacing: .03em; color: var(--ink); border: 3px solid transparent; transition: transform .1s var(--x), box-shadow .1s, background .1s, color .1s; }
+.gnav a { display: flex; align-items: center; gap: 14px; padding: 13px 15px; font: 400 1.45rem/1 var(--d); text-transform: uppercase; letter-spacing: .03em; color: var(--ink); border: 3px solid transparent; transition: transform .1s var(--x), box-shadow .1s, background .1s, color .25s; }
 .gnav a svg { flex: none; color: var(--g1); }
 .gnav .ns { display: none; }
 .gnav a:hover { border-color: var(--ink); background: var(--tint); box-shadow: 4px 4px 0 var(--g2); transform: translate(-2px, -2px); }
 .gnav a:active { transition-duration: .04s; transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--g2); }
-.gnav a[aria-current=page] { background: var(--g1); color: var(--paper); border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); transform: none; }
+.gnav { isolation: isolate; }
+.gnav a { position: relative; z-index: 1; }
+.gnav .slide { position: absolute; left: 0; top: 0; z-index: 0; box-sizing: border-box; background: var(--g1); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); opacity: 0; pointer-events: none; transition: transform .34s var(--x, cubic-bezier(.16, 1, .3, 1)), width .34s var(--x, cubic-bezier(.16, 1, .3, 1)), height .34s var(--x, cubic-bezier(.16, 1, .3, 1)); will-change: transform; }
+.gnav a[aria-current=page], .gnav a[aria-current=page]:hover { background: transparent; color: var(--paper); border-color: transparent; box-shadow: none; transform: none; }
 .gnav a[aria-current=page] svg { color: inherit; }
 .gnav a:focus-visible { outline: none; box-shadow: 5px 5px 0 var(--g1); }
 .gm { min-width: 0; display: grid; gap: 26px; align-content: start; }
@@ -947,16 +951,18 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 }
 @media (max-width: 900px) {
   .gw { grid-template-columns: 1fr; gap: 20px; padding-top: 20px; }
-  /* phones and tablets: a row of icons, the page you are on shows its name */
-  .gnav { position: static; display: flex; gap: 8px; }
-  .gnav a { flex: 1 1 0; min-width: 0; justify-content: center; gap: 8px; padding: 0; height: 48px; border: 3px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--g2); }
-  .gnav a svg { color: var(--ink); }
+  /* phones and tablets: one row of icons; the green block slides to the one you tap */
+  .gnav { position: relative; top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .gnav a { min-width: 0; justify-content: center; padding: 0; height: 48px; border: 3px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--g2); }
+  .gnav a svg { color: var(--ink); width: 22px; height: 22px; transition: color .2s; }
   .gnav .nl, .gnav .ns { display: none; }
-  .gnav a[aria-current=page] { flex: 3.2 1 0; gap: 6px; background: var(--g1); box-shadow: 3px 3px 0 var(--ink); }
-  .gnav a[aria-current=page] svg { color: inherit; }
-  .gnav a[aria-current=page] .ns { display: inline; font-size: clamp(.95rem, 3.6vw, 1.15rem); letter-spacing: 0; white-space: nowrap; }
+  .gnav .slide { box-shadow: 3px 3px 0 var(--ink); }
+  .gnav a[aria-current=page], .gnav a[aria-current=page]:hover { background: transparent; border-color: transparent; box-shadow: none; }
+  .gnav a[aria-current=page] svg { color: var(--paper); }
   .gnav a:hover { transform: none; background: var(--tint); box-shadow: 3px 3px 0 var(--g2); }
-  .gnav a[aria-current=page]:hover { background: var(--g1); box-shadow: 3px 3px 0 var(--ink); }
+}
+@media (max-width: 380px) {
+  .gnav { gap: 4px; } .gnav a { border-width: 2px; height: 44px; } .gnav a svg { width: 18px; height: 18px; } .gnav .slide { border-width: 2px; }
 }
 @media (max-width: 760px) {
   .gt { height: 62px; gap: 10px; }
