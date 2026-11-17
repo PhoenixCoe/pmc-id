@@ -6,6 +6,7 @@ import { IdLockup } from './Logo';
 import { AppsPage, DataPage, HomePage, InfoPage, SecurityPage } from './pages';
 import { ToolkitMenus } from './toolkit';
 import { WalletPage } from './wallet';
+import { keyToPath, linkClick } from '@/lib/route';
 
 export const TABS: [string, string, string][] = [
   ['home', 'Home', 'home'], ['info', 'Info', 'badge'], ['security', 'Security and sign in', 'lock'],
@@ -22,8 +23,8 @@ const BAND: Record<string, [string, string, string, string]> = {
 
 
 const HELP: [string, string, string][] = [
-  ['Change my password', '#security', 'key'], ['Change my name or picture', '#info', 'user'], ['Add a card', '#wallet', 'wallet'],
-  ['Sign out of other devices', '#security', 'lock'], ['Download or delete my data', '#data', 'shield'],
+  ['Change my password', 'security', 'key'], ['Change my name or picture', 'info', 'user'], ['Add a card', 'wallet', 'wallet'],
+  ['Sign out of other devices', 'security', 'lock'], ['Download or delete my data', 'data', 'shield'],
 ];
 /** A box like the apps button. It opens a short list of the things people ask for most. */
 function HelpMenu() {
@@ -36,14 +37,14 @@ function HelpMenu() {
     document.addEventListener('pointerdown', down); document.addEventListener('keydown', key);
     return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
   }, [open]);
-  useEffect(() => { const h = () => setOpen(false); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
+  useEffect(() => { const h = () => setOpen(false); window.addEventListener('pmc-route', h); return () => window.removeEventListener('pmc-route', h); }, []);
   return (
     <span className="help" ref={box}>
-      <button className="tb-help" type="button" ref={btn} aria-label="Help" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}><Ic n="qm" s={34} /></button>
+      <button className="tb-help" type="button" ref={btn} aria-label="Help" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}><Ic n="qm" s={29} /></button>
       {open ? (
         <div className="help-pop" role="menu" aria-label="Help">
           <p className="help-h">What do you need?</p>
-          {HELP.map(([t, href, ic]) => <a key={t} role="menuitem" href={href}><Ic n={ic} s={18} />{t}</a>)}
+          {HELP.map(([t, k, ic]) => <a key={t} role="menuitem" href={keyToPath(k)} onClick={(e) => linkClick(e, k)}><Ic n={ic} s={18} />{t}</a>)}
           <a role="menuitem" href="https://pmcstudios.uk/privacy" target="_blank" rel="noopener"><Ic n="external" s={18} />Privacy and terms</a>
         </div>
       ) : null}
@@ -57,10 +58,10 @@ export function Dashboard({ tab }: { tab: string }) {
   return (
     <div className="dash">
       <aside className="side">
-        <a className="tb-brand" href="#home" aria-label="PMC ID home"><IdLockup className="mark" /></a>
+        <a className="tb-brand" href="/home/" onClick={(e) => linkClick(e, 'home')} aria-label="PMC ID home"><IdLockup className="mark" /></a>
         <nav className="nav" aria-label="PMC ID">
           {TABS.map((x) => (
-            <a key={x[0]} href={'#' + x[0]} aria-current={x[0] === tab ? 'page' : undefined}><Ic n={x[2]} s={22} /><span className="nl">{x[1]}</span><span className="ns">{SHORT[x[0]] ?? x[1]}</span></a>
+            <a key={x[0]} href={keyToPath(x[0])} onClick={(e) => linkClick(e, x[0])} aria-current={x[0] === tab ? 'page' : undefined}><Ic n={x[2]} s={22} /><span className="nl">{x[1]}</span><span className="ns">{SHORT[x[0]] ?? x[1]}</span></a>
           ))}
         </nav>
       </aside>
