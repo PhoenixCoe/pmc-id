@@ -114,6 +114,7 @@ export const PATHS: Record<string, string> = {
  "swap": "M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4",
  "wand": "M3 21L14 10M17 2v4M15 4h4M20 8v4M18 10h4M11 3v3M9.5 4.5h3",
  "pen": "M4 20l1-5L16 4l4 4L9 19zM13 7l4 4",
+ "wrench": "M16.2 3.3 A5.6 5.6 0 0 0 13 14 L6.5 20.5 L3.5 17.5 L10 11 A5.6 5.6 0 0 0 20.7 7.8",
  "tools": "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
  "device": "M3 5h18v11H3zM9 20h6M12 16v4",
  "unseen": "M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6zM10 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0M4 4l16 16",

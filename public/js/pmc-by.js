@@ -18,7 +18,7 @@
   var ICON = {
     pmc: '<svg viewBox="0 0 2582 1454" width="54" height="30" fill="currentColor" aria-hidden="true"><path d="' + PMC + '"/></svg>',
     star: '<svg viewBox="405 10 782 782" width="48" height="48" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="' + STAR + '"/></svg>',
-    tools: '<svg viewBox="0 0 2582 1454" width="54" height="30" fill="currentColor" aria-hidden="true"><path d="' + PMC + '"/></svg>',
+    tools: '<svg viewBox="0 0 24 24" width="46" height="46" ' + S + ' aria-hidden="true"><path d="M16.2 3.3 A5.6 5.6 0 0 0 13 14 L6.5 20.5 L3.5 17.5 L10 11 A5.6 5.6 0 0 0 20.7 7.8"/></svg>',
     mini: '<svg viewBox="405 10 782 782" width="36" height="36" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="' + STAR + '"/></svg>',
     user: '<svg viewBox="0 0 24 24" width="46" height="46" ' + S + ' aria-hidden="true"><path d="M8 4h8v8H8zM4 21v-3h16v3"/></svg>'
   };
