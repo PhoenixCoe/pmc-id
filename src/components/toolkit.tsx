@@ -31,6 +31,19 @@ export function ToolkitMenus() {
     if (by.current) window.PmcBy!.mount(by.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), []);
+  /* The account button takes the colour of the picture, and follows it when the picture changes. */
+  useEffect(() => whenToolkit(() => {
+    const b = acct.current as (HTMLButtonElement & { _pa?: string }) | null;
+    if (!b) return;
+    const img = me?.img ?? '';
+    const cur = b.querySelector('img')?.getAttribute('src') ?? '';
+    if (!b.classList.contains('pa-on') && cur !== img) {
+      if (img) { const im = document.createElement('img'); im.alt = ''; im.src = img; b.innerHTML = ''; b.appendChild(im); }
+      else { const t = document.createElement('div'); t.innerHTML = b._pa ?? ''; const lt = t.querySelector('svg'); b.innerHTML = ''; if (lt) b.appendChild(lt); }
+      b._pa = b.innerHTML;
+    }
+    window.PmcAccount!.paint(b, img);
+  }), [me?.img]);
   return (
     <>
       <span id="by" ref={by} />
