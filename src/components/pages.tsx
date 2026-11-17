@@ -39,7 +39,7 @@ export function HomePage() {
   return (
     <>
       <section className="hero" aria-label="You">
-        <span className="dots" aria-hidden="true"><i /><i /></span>
+        <span className="dots" aria-hidden="true"><i /><i /><i /></span>
         <Av u={me} />
         <span className="who"><small>Welcome,</small><b>{me.first || me.name}</b><span>{me.email}</span></span>
       </section>
