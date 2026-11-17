@@ -5,7 +5,7 @@ import { Ic } from './Ic';
 import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
 import { brand, luhn } from '@/lib/validate';
-import { hasPinSaved, open as openWallet, seal, setPinSaved } from '@/lib/wallet';
+import { needsPin, open as openWallet, restoreKey, seal, wipeWallet } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
 
 const SKINS = [['#B49A57', '#171717'], ['#337957', '#FBF6EC'], ['#171717', '#FBF6EC'], ['#6FB894', '#171717']];
@@ -34,22 +34,23 @@ function CardFace({ c, i, live, photo }: { c: Pick<Card, 'brand' | 'num' | 'name
 }
 
 export function WalletPage() {
-  const { wallet, setWallet, notice, say } = useId_();
+  const { wallet, setWallet, notice, say, signOut } = useId_();
   const { errors, fail, clear, bad } = useErrors();
   const [adding, setAdding] = useState(false), [settingPin, setSettingPin] = useState(false);
-  const [pinOn, setPinOn] = useState(false);
+  const [pinOn, setPinOn] = useState(false), [ready, setReady] = useState(false), [keyOk, setKeyOk] = useState(true), [broken, setBroken] = useState(false);
   const [f, setF] = useState({ name: '', num: '', mm: '', yy: '' }), [photo, setPhoto] = useState('');
   const [p1, setP1] = useState(''), [p2, setP2] = useState(''), [up, setUp] = useState('');
 
-  useEffect(() => { setPinOn(hasPinSaved()); }, []);
+  /* The wallet opens with the key made from your PMC ID password when you signed in. */
+  useEffect(() => { let live = true; restoreKey().then((ok) => { if (!live) return; setKeyOk(ok); setPinOn(needsPin()); setReady(true); }); return () => { live = false; }; }, []);
   useEffect(() => {
-    if (wallet.cards || (hasPinSaved() && wallet.pin === null)) return;
+    if (!ready || !keyOk || wallet.cards || (pinOn && wallet.pin === null)) return;
     let live = true;
-    openWallet(null).then((c) => live && setWallet((w) => ({ ...w, cards: c })), () => live && setWallet((w) => ({ ...w, cards: [] })));
+    openWallet(wallet.pin).then((c) => live && setWallet((w) => ({ ...w, cards: c })), () => live && setBroken(true));
     return () => { live = false; };
-  }, [wallet.cards, wallet.pin, setWallet]);
+  }, [ready, keyOk, pinOn, wallet.cards, wallet.pin, setWallet]);
 
-  const locked = pinOn && wallet.pin === null && !wallet.cards;
+  const locked = pinOn && wallet.pin === null && !wallet.cards && !broken;
   const cards = wallet.cards ?? [];
   const save = async (next: Card[], pin: string | null) => { await seal(next, pin); setWallet((w) => ({ ...w, cards: next, pin })); };
   const stop = () => { setAdding(false); setSettingPin(false); clear(); setF({ name: '', num: '', mm: '', yy: '' }); setPhoto(''); setP1(''); setP2(''); };
@@ -74,9 +75,9 @@ export function WalletPage() {
   const savePin = () => {
     if (!/^\d{4,6}$/.test(p1)) return void fail('p1', 'Use 4 to 6 numbers.');
     if (p2 !== p1) return void fail('p2', "The two PINs don't match.");
-    save(cards, p1).then(() => { setPinSaved(true); setPinOn(true); stop(); say('PIN saved.'); });
+    save(cards, p1).then(() => { setPinOn(true); stop(); say('PIN saved.'); });
   };
-  const removePin = () => save(cards, null).then(() => { setPinSaved(false); setPinOn(false); say('PIN removed.'); });
+  const removePin = () => save(cards, null).then(() => { setPinOn(false); say('PIN removed.'); });
   const removeCard = (id: string) => save(cards.filter((c) => c.id !== id), wallet.pin).then(() => say('Card removed.'));
 
   const onPhoto = (fl: File | undefined) => {
@@ -89,6 +90,21 @@ export function WalletPage() {
     im.src = u;
   };
 
+  if (!ready) return null;
+  if (!keyOk) {
+    return (
+      <Panel title="Wallet">
+        <Rw label="Your wallet is locked" icon="lock" hint="Sign in again with your password to open it" act={<RowBtn label="Sign in again" onClick={() => void signOut('signin')} />} />
+      </Panel>
+    );
+  }
+  if (broken) {
+    return (
+      <Panel title="Wallet">
+        <Rw label="Your saved cards can't be opened" icon="lock" hint="They were locked with an older password. Remove them and add your cards again." act={<RowBtn label="Remove them" danger onClick={() => { wipeWallet(); setBroken(false); setPinOn(false); setWallet({ cards: [], pin: null, fails: 0, wait: 0 }); }} />} />
+      </Panel>
+    );
+  }
   if (locked) {
     return (
       <Panel title="Wallet">

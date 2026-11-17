@@ -617,9 +617,9 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 
 .auth-brand { color: var(--ink); display: block; }
 .auth-brand .mark { width: 170px; height: auto; display: block; }
-.tb-help { display: grid; place-items: center; width: 44px; height: 44px; color: var(--ink); border: 0; background: none; }
-.tb-help:hover { color: var(--g1); }
-.tb-help:focus-visible { box-shadow: none !important; color: var(--g1); text-decoration: underline; text-underline-offset: 4px; }
+.tb-help { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--ink); background: transparent; border: 3px solid currentColor; border-radius: 0; transition: background .1s, color .1s, box-shadow .1s; }
+.tb-help:hover { background: var(--ink); color: var(--white); }
+.tb-help:focus-visible { outline: none; box-shadow: 5px 5px 0 var(--g1) !important; }
 @media (max-width: 760px) { .auth-brand .mark { width: 140px; } }
 
 /* Dashboard pages */
@@ -772,3 +772,29 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 .filein::file-selector-button:hover { background: var(--ink); color: var(--white); }
 .sel-btn { background: var(--white); }
 .pw input[type=password]:not(:placeholder-shown) { font-size: 1.7rem; letter-spacing: .12em; }
+
+/* ---------- Page motion: pages rise into place with the kit's own curves ---------- */
+.split.in-first { animation: rise .6s var(--x) both; }
+.split.in-flow .sr-in, .split.in-flow .split-l h1 { animation: up .45s var(--x) both; }
+.split.in-flow .sr-in { animation-delay: .05s; }
+.steps i { transition: background .3s var(--x); }
+.tb-title { animation: up .4s var(--x) both; }
+.page > .band { animation: rise .6s var(--x) both; }
+#pg > * { animation: up .5s var(--x) both; }
+#pg > :nth-child(2) { animation-delay: .07s; }
+#pg > :nth-child(3) { animation-delay: .14s; }
+#pg > :nth-child(n+4) { animation-delay: .2s; }
+.nav a { transition: background .15s var(--x), color .15s var(--x); }
+
+/* ---------- Help menu, saved accounts, notes ---------- */
+.help { position: relative; display: inline-flex; }
+
+.help-pop { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; width: min(320px, calc(100vw - 32px)); background: var(--paper); border: 4px solid var(--ink); box-shadow: 7px 7px 0 var(--g2); display: grid; animation: up .22s var(--x) both; }
+.help-h { margin: 0; padding: 12px 16px; font: 400 1.5rem/1 var(--d); text-transform: uppercase; border-bottom: 3px solid var(--ink); }
+.help-pop a { display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: var(--ink); text-decoration: none; font: 400 1.2rem/1.1 var(--d); text-transform: uppercase; border-bottom: 2px solid var(--ink); }
+.help-pop a:last-child { border-bottom: 0; }
+.help-pop a:hover, .help-pop a:focus-visible { background: var(--ink); color: var(--white); outline: none; }
+.accs { display: grid; gap: 12px; }
+.pgerr { margin: 0; }
+.tag { display: inline-block; padding: 3px 9px; border: 2px solid currentColor; font: 400 .95rem/1 var(--d); text-transform: uppercase; }
+.btns { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }

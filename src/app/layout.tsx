@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#171717', viewportFit: 'cover' };
 
 /* A content security policy for the page: it can only load its own files, and talk to its own address and Supabase. Next.js needs inline scripts. */
-const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'";
+const SB = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/+$/, '');
+const CSP = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ${/^https?:\/\/[a-z0-9.:-]+$/i.test(SB) ? SB : ''}; base-uri 'none'; form-action 'self'; object-src 'none'`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { Foot } from './chrome';
 import { Ic } from './Ic';
 import { IdLockup } from './Logo';
@@ -14,10 +15,41 @@ const SHORT: Record<string, string> = { security: 'Security', apps: 'Apps', wall
 const BAND: Record<string, [string, string, string, string]> = {
   info: ['b-tint', 'badge', 'Your name and picture', 'This is what PMC apps show next to your name.'],
   security: ['b-g1', 'lock', 'Password and devices', 'Change your password and see where you are signed in.'],
-  apps: ['b-gold', 'link', 'Apps you use with PMC ID', 'Remove an app and it can no longer sign you in.'],
+  apps: ['b-gold', 'link', 'Apps you use with PMC ID', 'Every app and site you have signed in to with your PMC ID.'],
   wallet: ['b-ink', 'wallet', 'Your cards', 'Add a card once and PMC sites can fill it in for you.'],
   data: ['b-g2', 'shield', 'Your data', 'Download a copy of it, or delete your PMC ID.'],
 };
+
+
+const HELP: [string, string, string][] = [
+  ['Change my password', '#security', 'key'], ['Change my name or picture', '#info', 'user'], ['Add a card', '#wallet', 'wallet'],
+  ['Sign out of other devices', '#security', 'lock'], ['Download or delete my data', '#data', 'shield'],
+];
+/** A box like the apps button. It opens a short list of the things people ask for most. */
+function HelpMenu() {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null), btn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btn.current?.focus(); } };
+    document.addEventListener('pointerdown', down); document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
+  }, [open]);
+  useEffect(() => { const h = () => setOpen(false); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
+  return (
+    <span className="help" ref={box}>
+      <button className="tb-help" type="button" ref={btn} aria-label="Help" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}><Ic n="qm" s={34} /></button>
+      {open ? (
+        <div className="help-pop" role="menu" aria-label="Help">
+          <p className="help-h">What do you need?</p>
+          {HELP.map(([t, href, ic]) => <a key={t} role="menuitem" href={href}><Ic n={ic} s={18} />{t}</a>)}
+          <a role="menuitem" href="https://pmcstudios.uk/privacy" target="_blank" rel="noopener"><Ic n="external" s={18} />Privacy and terms</a>
+        </div>
+      ) : null}
+    </span>
+  );
+}
 
 export function Dashboard({ tab }: { tab: string }) {
   const t = TABS.find((x) => x[0] === tab) ?? TABS[0];
@@ -34,13 +66,13 @@ export function Dashboard({ tab }: { tab: string }) {
       </aside>
       <div className="main">
         <header className="tb">
-          <h1 className="tb-title"><Ic n={t[2]} s={26} />{t[1]}</h1>
+          <h1 className="tb-title" key={tab}><Ic n={t[2]} s={26} />{t[1]}</h1>
           <div className="tb-end">
-            <a className="tb-help" href="https://pmcstudios.uk/help" target="_blank" rel="noopener" aria-label="Help"><Ic n="help" s={34} /></a>
+            <HelpMenu />
             <ToolkitMenus />
           </div>
         </header>
-        <main className="page">
+        <main className="page" key={tab}>
           {b ? (
             <section className={'band ' + b[0]}>
               <span className="dots" aria-hidden="true"><i /><i /></span>

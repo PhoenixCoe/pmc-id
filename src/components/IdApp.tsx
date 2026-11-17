@@ -1,25 +1,39 @@
 'use client';
 import { useEffect } from 'react';
-import { Choose, Create, Reset, SignIn } from './auth';
+import { Choose, Create, Going, Off, Reset, SignIn } from './auth';
 import { Dashboard, TABS } from './dashboard';
 import { IdProvider, useHash, useId_ } from './state';
 import { whenToolkit } from './toolkit';
 
 function Screen() {
-  const { me, draft, setDraft } = useId_();
-  const hash = useHash();
-  let h = hash || 'choose';
-  const m = /^create-([1-6])$/.exec(h);
+  const { status, me, saved, handoff, go, signOut } = useId_();
+  const h = useHash();
   const isTab = TABS.some((t) => t[0] === h);
-  /* A password-reset flag only lives on steps 4 and 5. */
-  useEffect(() => { if (draft.reset && h !== 'create-4' && h !== 'create-5') setDraft({ ...draft, reset: false }); }, [h, draft, setDraft]);
+  const m = /^create-([1-6])$/.exec(h);
+  const inn = status === 'in' && !!me;
+  /* An app is waiting for this sign in: a signed in person is asked which account, then sent back. */
+  const waiting = inn && !!handoff && (h === '' || h === 'choose' || h === 'going' || h === 'signin');
+
   useEffect(() => whenToolkit(() => { window.PmcAccount!.close(); window.PmcBy!.close?.(); }), [h]);
-  if (!me && (h === 'choose' || isTab)) h = 'signin';
-  if (m) return <Create key={m[1] + (draft.reset ? 'r' : '')} n={+m[1]} />;
-  if (h === 'signin') return <SignIn />;
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (h === 'add') void signOut('signin');                       // "Add account" in the account menu
+    else if (h === 'profile') go('info');                          // an app's picture button
+    else if (inn && !isTab && !waiting) go('home');
+  }, [status, inn, isTab, waiting, h, go, signOut]);
+
+  if (status === 'loading') return null;
+  if (status === 'off') return <Off />;
+  if (h === 'going' && handoff) return <Going />;
+  if (inn) {
+    if (waiting) return <Choose />;
+    return <Dashboard tab={isTab ? h : 'home'} />;
+  }
+  /* Signed out: the accounts used on this device first, or straight to sign in. */
+  if (m) return <Create key={m[1]} n={+m[1]} />;
   if (h === 'reset') return <Reset />;
-  if (isTab) return <Dashboard tab={h} />;
-  return <Choose />;
+  if (h === 'signin' || h === 'add') return <SignIn />;
+  return saved.length ? <Choose /> : <SignIn />;
 }
 
 export function IdApp() {

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Ic } from './Ic';
 import { Mark } from './Logo';
@@ -28,6 +28,8 @@ export function Foot() {
 /** The split sign-in card: dark halftone panel on the left, the form on the right. */
 /* The height the last card had, so the next card can ease from it instead of jumping. */
 let lastHeight = 0;
+/* When a card is replaced by the next step within a moment, only its contents slide in. A card arriving fresh rises into place. */
+let lastGone = 0;
 
 /** Makes the card grow or shrink smoothly whenever its contents change size. */
 function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: React.RefObject<HTMLDivElement | null>, lead: React.RefObject<HTMLHeadingElement | null>) {
@@ -62,10 +64,12 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
 export function AuthCard({ title, step, onSubmit, children }: { title: string; step?: number; onSubmit: () => void; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), lead = useRef<HTMLHeadingElement>(null);
   useSmoothHeight(box, inner, lead);
+  const [flow] = useState(() => Date.now() - lastGone < 500);
+  useEffect(() => () => { lastGone = Date.now(); }, []);
   return (
     <div className="auth">
       <main className="auth-mid">
-        <div className="split" ref={box}>
+        <div className={'split ' + (flow ? 'in-flow' : 'in-first')} ref={box}>
           <div className="split-l">
             <div className="ht" aria-hidden="true"><i /><i /><i /></div>
             <a className="split-logo" href="https://pmcstudios.uk" aria-label="PMC Studios"><Mark /></a>
