@@ -13,11 +13,11 @@ export const TABS: [string, string, string][] = [
 ];
 const SHORT: Record<string, string> = { security: 'Security', apps: 'Apps', wallet: 'Wallet', data: 'Data' };
 const BAND: Record<string, [string, string, string, string]> = {
-  info: ['b-tint', 'badge', 'Your name and picture', 'This is what PMC apps show next to your name.'],
+  info: ['b-g1', 'badge', 'Your name and picture', 'This is what PMC apps show next to your name.'],
   security: ['b-g1', 'lock', 'Password and devices', 'Change your password and see where you are signed in.'],
-  apps: ['b-gold', 'link', 'Apps you use with PMC ID', 'Every app and site you have signed in to with your PMC ID.'],
-  wallet: ['b-ink', 'wallet', 'Your cards', 'Add a card once and PMC sites can fill it in for you.'],
-  data: ['b-g2', 'shield', 'Your data', 'Download a copy of it, or delete your PMC ID.'],
+  apps: ['b-g1', 'link', 'Apps you use with PMC ID', 'Every app and site you have signed in to with your PMC ID.'],
+  wallet: ['b-g1', 'wallet', 'Your cards', 'Add a card once and PMC sites can fill it in for you.'],
+  data: ['b-g1', 'shield', 'Your data', 'Download a copy of it, or delete your PMC ID.'],
 };
 
 
@@ -66,7 +66,7 @@ export function Dashboard({ tab }: { tab: string }) {
       </aside>
       <div className="main">
         <header className="tb">
-          <h1 className="tb-title" key={tab}><Ic n={t[2]} s={26} />{t[1]}</h1>
+          <h1 className="tb-title" key={tab}><Ic n={t[2]} s={26} /><span className="nl">{t[1]}</span><span className="ns">{SHORT[tab] ?? t[1]}</span></h1>
           <div className="tb-end">
             <HelpMenu />
             <ToolkitMenus />
@@ -76,8 +76,8 @@ export function Dashboard({ tab }: { tab: string }) {
           {b ? (
             <section className={'band ' + b[0]}>
               <span className="dots" aria-hidden="true"><i /><i /></span>
-              <span className="band-ic" aria-hidden="true"><Ic n={b[1]} s={44} /></span>
-              <span className="band-t"><b>{b[2]}</b><small>{b[3]}</small></span>
+              <span className="band-ic" aria-hidden="true"><Ic n={b[1]} s={34} /></span>
+              <span className="band-t"><b>{b[2]}</b></span>
             </section>
           ) : null}
           <div id="pg">
