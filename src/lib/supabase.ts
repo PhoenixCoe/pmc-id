@@ -13,6 +13,7 @@ export const APPS: Record<string, { name: string; url?: string; extension?: bool
   mini: { name: 'Coe Mini', extension: true },
   tools: { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/' },
   apps: { name: 'PMC Tools', url: 'https://apps.pmcstudios.uk/' },
+  studios: { name: 'PMC Studios', url: 'https://pmcstudios.uk/' },
 };
 
 export class ApiError extends Error {
