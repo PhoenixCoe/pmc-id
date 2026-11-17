@@ -119,12 +119,12 @@ export function WalletPage() {
   return (
     <>
       <Panel title="Cards">
-        {adding && !cards.length ? null : (
+        {cards.length ? (
           <div className="cards">
             {cards.map((c, i) => <div className="cardwrap" key={c.id}><CardFace c={c} i={i} /><div className="cw-act"><RowBtn label="Remove" onClick={() => removeCard(c.id)} /></div></div>)}
-            {adding ? null : <button className="addcard" type="button" onClick={() => { say(''); setAdding(true); }}><i className="cf-chip" aria-hidden="true" /><Ic n="plus" s={26} /><span>Add a card</span></button>}
           </div>
-        )}
+        ) : null}
+        {adding ? null : <Rw label="Add a card" icon="plus" hint={cards.length ? 'Saved in this browser with your others' : 'No cards saved yet'} act={<RowBtn label="Add" onClick={() => { say(''); setAdding(true); }} />} />}
         {adding ? (
           <form className="rw ed addform" data-form="card" noValidate onSubmit={(e) => { e.preventDefault(); addCard(); }}>
             <span className="rw-l">New card</span>

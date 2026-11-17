@@ -68,15 +68,19 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
 export function AuthCard({ title, step, onSubmit, children }: { title: string; step?: number; onSubmit: () => void; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), lead = useRef<HTMLHeadingElement>(null);
   useSmoothHeight(box, inner, lead);
+  const { from, leave } = useId_();
   const [flow] = useState(() => Date.now() - lastGone < 500);
   useEffect(() => () => { lastGone = Date.now(); }, []);
   return (
     <div className="auth">
+      <header className="gt">
+        <a className="gt-brand" href="https://pmcstudios.uk" aria-label="PMC Studios"><Mark className="mark" /><span className="gt-tag">ID</span></a>
+        {from ? <div className="gt-end"><a className="tb-back" href={from.url} onClick={leave} aria-label={`Back to ${from.name}`}><Ic n="back" s={20} /><span>{from.name}</span></a></div> : null}
+      </header>
       <main className="auth-mid">
         <div className={'split ' + (flow ? 'in-flow' : 'in-first')} ref={box}>
           <div className="split-l">
             <div className="ht" aria-hidden="true"><i /><i /><i /></div>
-            <a className="split-logo" href="https://pmcstudios.uk" aria-label="PMC Studios"><Mark /></a>
             <h1 ref={lead}>{title}</h1>
           </div>
           <form className="split-r" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}><div className="sr-in" ref={inner}>{children}</div></form>
