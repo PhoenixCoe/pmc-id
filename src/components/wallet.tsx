@@ -4,6 +4,8 @@ import { Field, useErrors } from './form';
 import { Ic } from './Ic';
 import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
+import { readPlan } from '@/lib/supabase';
+import type { Plan } from '@/lib/supabase';
 import { brand, luhn } from '@/lib/validate';
 import { needsPin, open as openWallet, restoreKey, seal, wipeWallet } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
@@ -160,7 +162,24 @@ export function WalletPage() {
         <p className="pnote"><Ic n="lock" s={16} />Saved in this browser only, never on our servers.</p>
       </Panel>
       <Ok text={notice} />
-      <Panel title="Subscriptions"><p className="pempty">You have no subscriptions.</p></Panel>
+      <Subscriptions />
     </>
+  );
+}
+
+const day = (v: string) => new Date(v).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+/** What you pay for. Coe Pro is the only paid thing, and the rest are free. */
+function Subscriptions() {
+  const [plan, setPlan] = useState<Plan | null | undefined>(undefined);
+  useEffect(() => { readPlan().then(setPlan).catch(() => setPlan(null)); }, []);
+  const end = plan?.period_end ? Date.parse(plan.period_end) : 0;
+  const live = !!plan && (plan.status === 'active' || plan.status === 'trialing' || plan.status === 'past_due' || (plan.status === 'canceled' && end > Date.now()));
+  const hint = !plan || !live ? 'Free' : plan.status === 'past_due' ? 'Payment needed' : plan.status === 'canceled' ? `Ends ${day(plan.period_end as string)}` : end ? `Renews ${day(plan.period_end as string)}` : 'Active';
+  return (
+    <Panel title="Subscriptions">
+      <Rw keep label="Coe" logo="coe" hint={plan === undefined ? 'Checking…' : hint} val={<span className="tag">{live ? 'Pro' : 'Free'}</span>} act={<a className="btn small" href="https://coe.pmcstudios.uk/plans/" target="_blank" rel="noopener">{live ? 'Manage' : 'See Pro'}</a>} />
+      <Rw keep label="Coe Mini" logo="mini" hint="Uses your Coe plan" />
+      <Rw keep label="PMC Tools" logo="tools" hint="Free, no plan needed" val={<span className="tag">Free</span>} />
+    </Panel>
   );
 }

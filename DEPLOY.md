@@ -16,24 +16,24 @@ Sign in uses the real PMC account system (Supabase). Step 3 connects it.
 10. Open https://accounts.pmcstudios.uk and press Ctrl+Shift+R. To check everything at once, run `node check-setup.mjs` (Node 18 or newer). Every line should say `ok`.
 
 ## Make the emails send (codes, password reset)
-Supabase's built-in email only sends to people on your Supabase team, and only 2 an hour. That is why codes did not arrive. Fix it once, with a free email service (Resend: 100 emails a day, 3,000 a month).
-1. resend.com > sign up > **Domains** > **Add Domain**. Type `updates.pmcstudios.uk`. Pick the region nearest your users. **Add**.
-2. On the domain page press **Sign in to Cloudflare**, allow Resend. The records add themselves. (If that button is missing: Cloudflare > pmcstudios.uk > **DNS** > **Records** > **Add record** for each record Resend lists. Set Proxy status to **DNS only**.)
-3. Wait until the domain says **Verified** (usually a few minutes). Press **Verify DNS Records** if it does not.
+Supabase's built-in email only sends to people on your Supabase team, and only 2 an hour. That is why codes did not arrive. Fix it once with Resend (free: 100 emails a day, 3,000 a month).
+1. resend.com > sign up > **Domains** > **Add Domain**. Type `updates.pmcstudios.uk` (Resend recommends a subdomain). Pick the region nearest your users. **Add**.
+2. On the domain page, **Records** tab: add every record shown to Cloudflare (Cloudflare > pmcstudios.uk > **DNS** > **Records** > **Add record**, one at a time, copied exactly). Set **Proxy status** to **DNS only** (grey cloud). If Resend shows a button to sign in to Cloudflare, use that and the records add themselves.
+3. Press **Verify DNS Records**. It says **Verified** in a few minutes (can take longer; up to 72 hours at worst).
 4. Resend > **API Keys** > **Create API Key**. Name `supabase`, permission **Sending access**, domain `updates.pmcstudios.uk`. **Add**. Copy the key now (starts `re_`). You only see it once.
 5. Supabase > your project > **Authentication** > **Emails** > **SMTP Settings**. Turn on **Enable custom SMTP**. Fill in: Sender email `no-reply@updates.pmcstudios.uk`, Sender name `PMC ID`, Host `smtp.resend.com`, Port `465`, Username `resend`, Password the `re_` key. **Save**.
-6. Supabase > **Authentication** > **Rate Limits**. Raise **Emails sent per hour** to 100 (the default after custom SMTP is 30) and Save.
-7. Supabase > **Authentication** > **Emails** > **Templates**. For each of the three, paste the subject and body from the `emails` folder:
+6. Supabase > **Authentication** > **Rate Limits**. Raise **Emails sent per hour** (after custom SMTP it starts low at 30) to 100. Save.
+7. Supabase > **Authentication** > **Emails** > **Templates**. For each one, paste the subject and the whole file from the `emails` folder into **Message body**, then **Save**:
    - **Confirm sign up**: subject `Your PMC ID code`, body `emails/confirm-signup.html`.
    - **Reset password**: subject `Reset your PMC ID password`, body `emails/reset-password.html`.
    - **Reauthentication**: subject `Confirm it is you`, body `emails/reauthentication.html`.
-   Press **Save** on each.
-8. Test: open PMC ID in a private window, make an account with an email that is not yours on Supabase. The code should arrive in under a minute (look in junk once).
+   - **Password changed** (optional security email, sent after a password change): subject `Your PMC ID password was changed`, body `emails/password-changed.html`. Switch its notification on if there is a toggle next to it.
+8. Test: open PMC ID in a private window, make an account with an email that is not on your Supabase team. The code arrives in under a minute (check junk once).
 
 ## Supabase checklist
 1. SQL editor: Coe's `setup.sql` has been run (it makes `profiles`, `app_access` and `pmc_delete_me`).
 2. Emails: done in the section above.
-3. Authentication > URL configuration: add `https://accounts.pmcstudios.uk` to the allowed URLs.
+3. **Authentication** > **URL Configuration**: Site URL `https://id.pmcstudios.uk`. Redirect URLs: add `https://id.pmcstudios.uk/**`, `https://coe.pmcstudios.uk/**`, `https://tools.pmcstudios.uk/**` and `https://pmcstudios.uk/**`.
 4. Changed a variable later? **Actions** tab > **Deploy PMC ID** > **Run workflow**.
 
 ## Updating later

@@ -12,9 +12,9 @@ export function RowBtn({ label, onClick, danger }: { label: string; onClick: () 
 }
 
 /** One row: a tile and a label with a hint on the left, a value and a control on the right. */
-export function Rw({ label, val, act, icon, logo, hint, tone }: { label: ReactNode; val?: ReactNode; act?: ReactNode; icon?: string; logo?: 'coe' | 'mini' | 'tools'; hint?: ReactNode; tone?: string }) {
+export function Rw({ label, val, act, icon, logo, hint, tone, keep }: { keep?: boolean; label: ReactNode; val?: ReactNode; act?: ReactNode; icon?: string; logo?: 'coe' | 'mini' | 'tools'; hint?: ReactNode; tone?: string }) {
   return (
-    <div className="rw">
+    <div className={keep ? 'rw keep' : 'rw'}>
       <span className="rw-l">
         {logo ? <AppLogo id={logo} /> : icon ? <span className={'rw-ic' + (tone ? ' ' + tone : '')} aria-hidden="true"><Ic n={icon} s={20} /></span> : null}
         <span className="rw-t"><b>{label}</b>{hint ? <small>{hint}</small> : null}</span>
