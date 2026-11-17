@@ -1,7 +1,7 @@
 # Emails
 
 Four emails: one for each of Supabase's **Confirm sign up**, **Reset password**, **Reauthentication** and **Password changed** templates.
-Each one shows the 6 digit code `{{ .Token }}`. See DEPLOY.md > "Make the emails send" for the numbered steps.
+Each one has its own colour block (green, orange, blue, purple) and shows the 6 digit code `{{ .Token }}`. See DEPLOY.md > "Make the emails send" for the numbered steps.
 
 | Supabase template | Subject | Message body |
 |---|---|---|
