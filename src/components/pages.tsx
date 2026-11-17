@@ -23,18 +23,32 @@ const OPEN: { name: string; url: string; logo: 'coe' | 'mini' | 'tools'; hint: s
   { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/', logo: 'tools', hint: 'Free tools for everyday jobs' },
 ];
 export function HomePage() {
-  const { me, wallet } = useId_();
-  usePaint('.me', me?.img ?? '', true);
+  const { me, wallet, apps } = useId_();
+  usePaint('.hero', me?.img ?? '', true);
   if (!me) return null;
+  const used = apps.filter((a) => a.last_at);
   const todo: [string, string, string][] = [];
   if (!me.dob) todo.push(['Add your birthday', 'info', 'cake']);
   if (!wallet.pin && hasWallet() && !needsPin()) todo.push(['Set a wallet PIN', 'wallet', 'lock']);
+  const rows: [string, string, string, string][] = [
+    ['info', 'Personal info', me.name, 'user'],
+    ['security', 'Security', 'Password', 'lock'],
+    ['apps', 'Linked apps', used.length === 1 ? '1 app' : `${used.length} apps`, 'link'],
+    ['wallet', 'Wallet', wallet.cards ? (wallet.cards.length === 1 ? '1 card' : `${wallet.cards.length} cards`) : hasWallet() ? 'Locked' : 'No cards', 'wallet'],
+  ];
   return (
     <>
-      <section className="me" aria-label="You">
+      <section className="hero" aria-label="You">
         <span className="dots" aria-hidden="true"><i /><i /></span>
-        <Av u={me} /><span className="who"><b>{me.name}</b><small>{me.email}</small></span>
-        <a className="btn-ic pen" href="/info/" onClick={(e) => linkClick(e, 'info')} aria-label="Change your name and picture"><Ic n="pen" /></a>
+        <Av u={me} />
+        <span className="who"><small>Welcome,</small><b>{me.first || me.name}</b><span>{me.email}</span></span>
+      </section>
+      <section className="panel"><h2>Your PMC ID</h2>
+        {rows.map(([k, t, v, ic]) => (
+          <a key={k} className="rw todo-r" href={keyToPath(k)} onClick={(e) => linkClick(e, k)}>
+            <span className="rw-l"><span className="rw-ic" aria-hidden="true"><Ic n={ic} s={20} /></span><span className="rw-t"><b>{t}</b><small>{v}</small></span></span><span /><span className="go"><Ic n="arrow" s={18} /></span>
+          </a>
+        ))}
       </section>
       <section className="panel"><h2>Open an app</h2>
         {OPEN.map((a) => (
