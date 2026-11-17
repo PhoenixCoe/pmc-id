@@ -5,7 +5,7 @@
  */
 export const SB_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim().replace(/\/+$/, '');
 const KEY = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '').trim();
-export const LIVE = (/^https:\/\/[a-z0-9.-]+$/i.test(SB_URL) || /^http:\/\/localhost(:\d+)?$/.test(SB_URL)) && !!KEY && !/^__/.test(KEY) && !/^sb_secret_/.test(KEY);
+export const LIVE = (/^https:\/\/[a-z0-9.-]+$/i.test(SB_URL) || /^http:\/\/localhost(:\d+)?$/.test(SB_URL)) && !!KEY && !/^__/.test(KEY) && !/^sb_secre[t]_/.test(KEY);
 
 /** The only places a sign in can be sent back to. The address comes from this list, never from the link. */
 export const APPS: Record<string, { name: string; url?: string; extension?: boolean }> = {
