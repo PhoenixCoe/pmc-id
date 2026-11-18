@@ -16,12 +16,11 @@ export function Av({ u }: { u: Pick<User, 'img'> }) {
   );
 }
 
-export function Foot({ back = false }: { back?: boolean }) {
-  const { from, leave } = useId_();
+/* The way back to the app is the button in the top bar, so it is not repeated down here. */
+export function Foot(_: { back?: boolean }) {
   return (
     <footer className="foot">
       <a className="foot-mark" href="https://pmcstudios.uk/" aria-label="PMC Studios"><Mark /></a>
-      {back && from ? <a className="foot-back" href={from.url} onClick={leave}><Ic n="back" s={16} />Back to {from.name}</a> : null}
       <span className="c">© 2026 PMC Studios</span>
       <a href="https://pmcstudios.uk/privacy">Privacy</a>
       <a href="https://pmcstudios.uk/terms">Terms</a>

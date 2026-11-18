@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { forget, remember, savedList } from '@/lib/saved';
 import type { Saved } from '@/lib/saved';
 import { navigate, useRoute } from '@/lib/route';
-import { LIVE, clearFrom, readFrom, type From, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
+import { LIVE, clearFrom, readBack, readFrom, type From, SESSION_EVENT, getSession, getUser, listApps, readHandoff, readProfile, saveSession, setPasswordWith, signOutOf, toSession, writeProfile } from '@/lib/supabase';
 import type { AppRow, Handoff, Profile, Session } from '@/lib/supabase';
 import { lockWallet, restoreKey, setOwner, unlockWithPassword } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
@@ -22,6 +22,10 @@ interface Ctx {
   me: User | null; saved: Saved[]; forgetSaved: (email: string) => void;
   apps: AppRow[]; handoff: Handoff | null;
   from: From | null; leave: () => void;
+  /** Set when the person was sent here to sign in: after the sign in they go back there. */
+  back: From | null;
+  /** Where a finished sign in goes: back to the app ('going') or to the account ('home'). */
+  onward: 'going' | 'home';
   prefill: string; setPrefill: (email: string) => void; pickAccount: (email: string) => void;
   draft: Draft; setDraft: (d: Draft) => void;
   wallet: WalletState; setWallet: (w: WalletState | ((w: WalletState) => WalletState)) => void; resetWallet: () => void;
@@ -55,8 +59,9 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const [handoff, setHandoff] = useState<Handoff | null>(null);
   const [prefill, setPrefill] = useState('');
   const [from, setFrom] = useState<From | null>(null);
-  useEffect(() => { setFrom(readFrom()); }, []);
-  const leave = useCallback(() => { clearFrom(); setFrom(null); }, []);
+  const [back, setBack] = useState<From | null>(null);
+  useEffect(() => { const f = readFrom(); setFrom(f); setBack(readBack(f)); }, []);
+  const leave = useCallback(() => { clearFrom(); setFrom(null); setBack(null); }, []);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [wallet, setWallet] = useState<WalletState>(EMPTY_WALLET);
   const [notice, setNotice] = useState('');
@@ -128,8 +133,9 @@ export function IdProvider({ children }: { children: ReactNode }) {
   const pickAccount = useCallback((email: string) => { setPrefill(email); navigate('signin'); }, []);
 
   useEffect(() => { setNotice(''); window.scrollTo(0, 0); }, [hash]);
-  const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, from, leave, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),
-    [status, session, me, saved, forgetSaved, apps, handoff, from, leave, prefill, setPrefill, pickAccount, draft, wallet, notice, say, go, resetWallet, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps]);
+  const onward: 'going' | 'home' = handoff || back ? 'going' : 'home';
+  const v = useMemo<Ctx>(() => ({ status, session, me, saved, forgetSaved, apps, handoff, from, leave, back, onward, prefill, setPrefill, pickAccount, draft, setDraft, wallet, setWallet, resetWallet, notice, say, go, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps }),
+    [status, session, me, saved, forgetSaved, apps, handoff, from, leave, back, onward, prefill, setPrefill, pickAccount, draft, wallet, notice, say, go, resetWallet, signedIn, signOut, endSession, saveProfile, setPassword, reloadApps]);
   return <C.Provider value={v}>{children}</C.Provider>;
 }
 export { C as IdContext };
