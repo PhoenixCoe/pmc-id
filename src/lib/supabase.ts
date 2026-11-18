@@ -234,4 +234,16 @@ export function readFrom(): From | null {
     return f;
   } catch { return null; }
 }
+/** Sent here to sign in or make an account, not to manage one: after that the person goes straight back. Only the front page and the sign in, create and reset screens count. The account tabs (Manage PMC ID) never do. */
+export function readBack(f: From | null): From | null {
+  try {
+    if (!f) return null;
+    const p = location.pathname.replace(/^\/+|\/+$/g, '');
+    if (!(p === '' || p === 'signin' || p === 'reset' || p.startsWith('create'))) return null;
+    /* ?path=/the-page/ : the page the person was on, so they land on it again. Only a plain path on the app's own address is taken. */
+    const q = new URLSearchParams(location.search).get('path') || '';
+    const safe = /^\/(?![/\\])[A-Za-z0-9\-._~/]{0,200}$/.test(q) ? q : '';
+    return safe ? { ...f, url: new URL(safe, f.url).href } : f;
+  } catch { return null; }
+}
 export function clearFrom(): void { try { sessionStorage.removeItem(FROM_KEY); } catch { /* ignore */ } }

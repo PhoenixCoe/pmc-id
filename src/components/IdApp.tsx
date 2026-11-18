@@ -7,7 +7,7 @@ import { whenToolkit } from './toolkit';
 import { fixOldHash } from '@/lib/route';
 
 function Screen() {
-  const { status, me, saved, handoff, go, signOut } = useId_();
+  const { status, me, saved, handoff, back, go, signOut } = useId_();
   const h = useHash();
   useEffect(() => { fixOldHash(); }, []);
   useEffect(() => { if (new URLSearchParams(location.search).get('add') === '1') go('add'); }, [go]);
@@ -15,7 +15,8 @@ function Screen() {
   const m = /^create-([1-6])$/.exec(h);
   const inn = status === 'in' && !!me;
   /* An app is waiting for this sign in: a signed in person is asked which account, then sent back. */
-  const waiting = inn && !!handoff && (h === '' || h === 'choose' || h === 'going' || h === 'signin');
+  const asked = !!handoff || (!!back && (h === 'choose' || h === 'signin' || h === 'going'));
+  const waiting = inn && asked && (h === '' || h === 'choose' || h === 'going' || h === 'signin');
 
   useEffect(() => whenToolkit(() => { window.PmcAccount!.close(); window.PmcBy!.close?.(); }), [h]);
   useEffect(() => {
@@ -27,7 +28,7 @@ function Screen() {
 
   if (status === 'loading') return null;
   if (status === 'off') return <Off />;
-  if (h === 'going' && handoff) return <Going />;
+  if (h === 'going' && (handoff || back)) return <Going />;
   if (inn) {
     if (waiting) return <Choose />;
     return <Dashboard tab={isTab ? h : 'home'} />;

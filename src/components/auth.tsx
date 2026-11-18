@@ -27,7 +27,7 @@ export function Off() {
 
 /* ---------- Choose an account ---------- */
 export function Choose() {
-  const { me, saved, handoff, pickAccount, forgetSaved, signOut, go } = useId_();
+  const { me, saved, handoff, back, onward, pickAccount, forgetSaved, signOut, go } = useId_();
   const [open, setOpen] = useState('');
   const wrap = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -38,11 +38,11 @@ export function Choose() {
   const rows = [...(me ? [{ email: me.email, name: me.name, img: me.img, now: true }] : []), ...saved.map((a) => ({ ...a, now: false }))];
   return (
     <AuthCard title="Choose an account" onSubmit={() => undefined}>
-      <h2>Use your PMC ID</h2><p className="lead">{handoff ? `to carry on to ${handoff.name}` : 'one sign in for every PMC app'}</p>
+      <h2>Use your PMC ID</h2><p className="lead">{handoff || back ? `to carry on to ${(handoff ?? back)!.name}` : 'one sign in for every PMC app'}</p>
       <div ref={wrap} onKeyDown={(e) => { if (e.key === 'Escape') setOpen(''); }} className="accs">
         {rows.map((a) => (
           <div className="acc-wrap" key={a.email}>
-            <button className="acc" type="button" onClick={() => (a.now ? go(handoff ? 'going' : 'home') : pickAccount(a.email))}>
+            <button className="acc" type="button" onClick={() => (a.now ? go(onward) : pickAccount(a.email))}>
               <Av u={a} /><span className="who"><b>{a.name}</b><small>{a.email}</small></span>
             </button>
             <button className="more" type="button" aria-label={`More for ${a.email}`} aria-expanded={open === a.email} aria-haspopup="menu" onClick={() => setOpen(open === a.email ? '' : a.email)}><Ic n="more" /></button>
@@ -62,7 +62,7 @@ export function Choose() {
 
 /* ---------- Sign in ---------- */
 export function SignIn() {
-  const { signedIn, handoff, prefill, setDraft, go } = useId_();
+  const { signedIn, handoff, back, onward, prefill, setDraft, go } = useId_();
   const { errors, fail, clear, bad } = useErrors();
   const start = prefill || handoff?.hint || '';
   const [em, setEm] = useState(start), [pw, setPw] = useState(''), [busy, setBusy] = useState(false);
@@ -77,7 +77,7 @@ export function SignIn() {
     try {
       const r = await signIn(email, pw);
       await signedIn(r, pw);
-      go(handoff ? 'going' : 'home');
+      go(onward);
     } catch (e) {
       setBusy(false);
       if ((e as ApiError).code === 'email_not_confirmed') { resendSignup(email).catch(() => undefined); setDraft({ ...EMPTY_DRAFT, email }); go('create-6'); return; }
@@ -87,7 +87,7 @@ export function SignIn() {
   return (
     <AuthCard title="Sign in" onSubmit={submit}>
       <h2>Sign in to PMC ID</h2>
-      {handoff ? <p className="lead">to carry on to {handoff.name}</p> : null}
+      {handoff || back ? <p className="lead">to carry on to {(handoff ?? back)!.name}</p> : null}
       <Field id="em" label="Email" error={errors.em}><input id="em" ref={emRef} type="email" autoComplete="username" spellCheck={false} value={em} onChange={(e) => { setEm(e.target.value); clear('em'); }} {...bad('em')} /></Field>
       <Field id="pw" label="Password" error={errors.pw}><PwInput id="pw" inputRef={pwRef} auto="current-password" value={pw} onChange={(v) => { setPw(v); clear('pw'); }} invalid={!!errors.pw} /></Field>
       {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}
@@ -99,7 +99,7 @@ export function SignIn() {
 
 /* ---------- Reset a password: the email, then the code with the new password ---------- */
 export function Reset() {
-  const { signedIn, handoff, go } = useId_();
+  const { signedIn, onward, go } = useId_();
   const { errors, fail, clear, bad } = useErrors();
   const [stage, setStage] = useState<1 | 2>(1);
   const [em, setEm] = useState(''), [code, setCode] = useState(''), [pw, setPw] = useState(''), [pw2, setPw2] = useState('');
@@ -124,7 +124,7 @@ export function Reset() {
       const r = await verifyCode('recovery', em, code).catch((x) => { if ((x as ApiError).net || (x as ApiError).status === 429) throw x; return verifyCode('signup', em, code); }) as { access_token: string };
       await setPasswordWith(r.access_token, pw);
       await signedIn(r, pw);
-      go(handoff ? 'going' : 'home');
+      go(onward);
     } catch (x) {
       setBusy(false);
       const bad = /code|otp|token/i.test((x as ApiError).msg + (x as ApiError).code) || (x as ApiError).status === 403;
@@ -158,7 +158,7 @@ export function Reset() {
 /* ---------- Create a PMC ID: six steps ----------
    1 name, 2 about you, 3 email, 4 password, 5 check it all (the account is made here and a code is emailed), 6 the code. */
 export function Create({ n }: { n: number }) {
-  const { draft, setDraft, signedIn, handoff, go } = useId_();
+  const { draft, setDraft, signedIn, onward, go } = useId_();
   const { errors, fail, clear, bad } = useErrors();
   const [v, setV] = useState({ first: draft.first, last: draft.last, d: draft.d, m: draft.m, y: draft.y, gender: draft.gender, email: draft.email });
   const [pw, setPw] = useState(draft.pw), [pw2, setPw2] = useState(draft.pw);
@@ -176,7 +176,7 @@ export function Create({ n }: { n: number }) {
     saveSession(s);
     await writeProfile(s.uid, { name: draft.first.slice(0, 30), last: draft.last.slice(0, 30), dob: draft.d ? `${draft.d}/${draft.m}/${draft.y}` : '', gender: draft.gender }).catch(() => undefined);
     await signedIn(r, draft.pw);
-    setDraft(EMPTY_DRAFT); go(handoff ? 'going' : 'home');
+    setDraft(EMPTY_DRAFT); go(onward);
   };
 
   const next = async (code?: string) => {
@@ -280,11 +280,13 @@ export function Create({ n }: { n: number }) {
 
 /* ---------- Taking the sign in back to the app that asked ---------- */
 export function Going() {
-  const { handoff, session, go, signOut, endSession } = useId_();
+  const { handoff, back, session, go, signOut, endSession } = useId_();
   const [text, setText] = useState(''), [err, setErr] = useState(''), [done, setDone] = useState(false), [tries, setTries] = useState(0);
   const sent = useRef(false);
   const run = useCallback(() => {
-    const s = getSession(); if (!handoff || !s) { go('home'); return; }
+    /* Sent here only to sign in (the app gave no sign in to carry): go straight back to it. */
+    if (!handoff) { if (back) { setText(`Taking you back to ${back.name}…`); location.replace(back.url); } else go('home'); return; }
+    const s = getSession(); if (!s) { go('home'); return; }
     setErr('');
     if (handoff.url) {
       setText(`Taking you back to ${handoff.name}…`);
@@ -295,9 +297,9 @@ export function Going() {
       handBack(handoff, s);
       window.setTimeout(() => { if (!sent.current) { setText(''); setErr(`Could not reach ${handoff.name}. Make sure it is installed and turned on in this browser, then press Try again.`); } }, 4000);
     }
-  }, [handoff, go, endSession]);
+  }, [handoff, back, go, endSession]);
   useEffect(() => {
-    if (!handoff) return;
+    if (!handoff) { if (!back) return; const t = window.setTimeout(run, 500); return () => clearTimeout(t); }
     const onMsg = (ev: MessageEvent) => {
       if (ev.source !== window || ev.origin !== location.origin) return;
       const d = ev.data; if (!d || d.pmc !== 'ack' || d.state !== handoff.state) return;
@@ -308,7 +310,15 @@ export function Going() {
     window.addEventListener('message', onMsg);
     const t = window.setTimeout(run, 600);
     return () => { window.removeEventListener('message', onMsg); clearTimeout(t); };
-  }, [handoff, run, tries]);
+  }, [handoff, back, run, tries]);
+  if (!handoff && !back) return null;
+  if (!handoff && back) return (
+    <AuthCard title="You are in" onSubmit={() => undefined}>
+      <h2>One moment</h2>
+      {text ? <p className="lead" role="status">{text}</p> : null}
+      <div className="acts"><span /><button className="btn primary" type="button" onClick={run}>Continue to {back.name}</button></div>
+    </AuthCard>
+  );
   if (!handoff) return null;
   return (
     <AuthCard title="You are in" onSubmit={() => undefined}>
