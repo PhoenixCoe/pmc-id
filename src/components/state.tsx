@@ -11,11 +11,11 @@ import type { Card } from '@/lib/wallet';
 
 export interface User { name: string; first: string; last: string; email: string; img: string; dob: string; gender: string }
 export interface Draft { first: string; last: string; d: string; m: string; y: string; gender: string; email: string; pw: string }
-export interface WalletState { cards: Card[] | null; pin: string | null; fails: number; wait: number }
+export interface WalletState { cards: Card[] | null; fails: number; wait: number }
 export type Status = 'loading' | 'off' | 'out' | 'in';
 
 export const EMPTY_DRAFT: Draft = { first: '', last: '', d: '', m: '', y: '', gender: '', email: '', pw: '' };
-const EMPTY_WALLET: WalletState = { cards: null, pin: null, fails: 0, wait: 0 };
+const EMPTY_WALLET: WalletState = { cards: null, fails: 0, wait: 0 };
 
 interface Ctx {
   status: Status; session: Session | null;

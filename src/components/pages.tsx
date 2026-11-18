@@ -10,7 +10,7 @@ import { usePaint } from './toolkit';
 import { exportData, deleteMe, fileToPic, getUser, readStamps, reauthenticate, sayErr, signIn, saveSession, toSession, authed, signOutOf } from '@/lib/supabase';
 import type { ApiError } from '@/lib/supabase';
 import { forget } from '@/lib/saved';
-import { changePassword as rewrapWallet, hasWallet, needsPin, wipeWallet } from '@/lib/wallet';
+import { changePassword as rewrapWallet, hasWallet, wipeWallet } from '@/lib/wallet';
 import { keyToPath, linkClick } from '@/lib/route';
 import { GENDERS, pad2, realDate, strength } from '@/lib/validate';
 
@@ -29,7 +29,6 @@ export function HomePage() {
   const used = apps.filter((a) => a.last_at);
   const todo: [string, string, string][] = [];
   if (!me.dob) todo.push(['Add your birthday', 'info', 'cake']);
-  if (!wallet.pin && hasWallet() && !needsPin()) todo.push(['Set a wallet PIN', 'wallet', 'lock']);
   const rows: [string, string, string, string][] = [
     ['info', 'Personal info', me.name, 'user'],
     ['security', 'Security', 'Password', 'lock'],

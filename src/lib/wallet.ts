@@ -1,10 +1,9 @@
 /**
  * Wallet: cards are kept in this browser only, never on a server, and sealed with AES-GCM.
- * Two locks, from the outside in:
- *   1. The PMC ID password. When you sign in, a key is made from the password (PBKDF2, 200,000 rounds) and kept in this browser as a
- *      key that cannot be read back out. Sign out and it is deleted.
- *   2. An optional PIN. A second key from the PIN seals the cards inside the first lock, so even a signed in tab needs the PIN.
- * Changing the password only re-seals the outer lock, so the PIN keeps working.
+ * The lock is your PMC ID password. A key is made from it (PBKDF2, 200,000 rounds) and kept in this browser as a key that cannot be
+ * read back out; sign out and it is deleted. The Wallet page never opens by itself: you type the password to see your cards, and
+ * they lock again when you leave the page.
+ * Changing the password re-seals the cards with the new one.
  */
 export interface Card { id: string; name: string; num: string; mm: string; yy: string; brand: string; img: string }
 
@@ -20,12 +19,12 @@ export function ls(k: string, v?: string | null): string | null {
   } catch { /* storage blocked */ }
   return null;
 }
-const WK = () => B + 'v2.' + owner, PK = () => B + 'pin.' + owner;
+const WK = () => B + 'v2.' + owner, PK = () => B + 'pin.' + owner; // PK: the old wallet PIN flag, only cleared now
 export const setOwner = (uid: string) => { owner = uid.replace(/[^a-z0-9-]/gi, '').slice(0, 40); };
-export const hasPinSaved = () => ls(PK()) === '1';
-export const setPinSaved = (on: boolean) => ls(PK(), on ? '1' : null);
 export const hasWallet = () => !!ls(WK());
 export const wipeWallet = () => { ls(WK(), null); ls(PK(), null); void dropKey(); };
+/** Removes the saved cards but keeps the key, so new cards can be saved at once. */
+export const clearCards = () => { ls(WK(), null); ls(PK(), null); };
 
 const b64 = (a: ArrayBuffer | Uint8Array) => { let s = ''; new Uint8Array(a).forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); };
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -55,28 +54,30 @@ export async function restoreKey(): Promise<boolean> { mem = mem ?? (await fetch
 export const lockWallet = () => dropKey();
 export const isUnlocked = () => !!mem;
 
-export async function seal(cards: Card[], pin: string | null): Promise<void> {
+export async function seal(cards: Card[]): Promise<void> {
   if (!mem) throw new Error('locked');
-  let inner = JSON.stringify(cards), pinned = false;
-  if (pin) { const ps = crypto.getRandomValues(new Uint8Array(16)); inner = JSON.stringify({ s: b64(ps), ...(await enc(await derive(pin, ps), inner)) }); pinned = true; }
-  ls(WK(), JSON.stringify({ v: 2, p: pinned, ...(await enc(mem, inner)) }));
+  ls(WK(), JSON.stringify({ v: 2, p: false, ...(await enc(mem, JSON.stringify(cards))) }));
 }
-/** Opens the wallet. Throws 'locked' when the password key is missing, and a plain error for a wrong PIN. */
-export async function open(pin: string | null): Promise<Card[]> {
+/** Opens the wallet with the password key. Throws 'locked' when the key is missing and 'old' for a wallet that was sealed with a PIN. */
+export async function open(): Promise<Card[]> {
   const raw = ls(WK()); if (!raw) return [];
   if (!mem) throw new Error('locked');
   const o = JSON.parse(raw);
-  let inner = await dec(mem, o);
-  if (o.p) { if (!pin) throw new Error('pin'); const p = JSON.parse(inner); inner = await dec(await derive(pin, unb64(p.s)), p); }
-  return JSON.parse(inner);
+  if (o.p) throw new Error('old');
+  return JSON.parse(await dec(mem, o));
 }
-/** Whether the saved wallet needs a PIN before it opens. */
-export const needsPin = () => { try { return !!JSON.parse(ls(WK()) || 'null')?.p; } catch { return false; } };
-
-/** After a password change: the outer lock is made again from the new password. The PIN lock inside is untouched. */
+/**
+ * Checks a typed password against the saved cards, without touching the kept key.
+ * true: it opens them. false: it does not (a wrong password, or cards sealed with an older one). null: no cards are saved yet, so there is nothing to test it on.
+ */
+export async function testPassword(password: string): Promise<boolean | null> {
+  const raw = ls(WK()); if (!raw) return null;
+  try { const o = JSON.parse(raw); if (o.p) return false; await dec(await derive(password, salt()), o); return true; } catch { return false; }
+}
+/** After a password change: the cards are sealed again with a key made from the new password. */
 export async function changePassword(newPassword: string): Promise<void> {
   const raw = ls(WK()), old = mem;
   const nk = await derive(newPassword, salt());
-  if (raw && old) { const o = JSON.parse(raw); const inner = await dec(old, o); ls(WK(), JSON.stringify({ v: 2, p: !!o.p, ...(await enc(nk, inner)) })); }
+  if (raw && old) { const o = JSON.parse(raw); if (!o.p) { const inner = await dec(old, o); ls(WK(), JSON.stringify({ v: 2, p: false, ...(await enc(nk, inner)) })); } }
   mem = nk; await keep(nk);
 }
