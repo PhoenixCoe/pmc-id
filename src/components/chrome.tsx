@@ -16,7 +16,7 @@ export function Av({ u }: { u: Pick<User, 'img'> }) {
   );
 }
 
-/* The way back to the app is the button in the top bar, so it is not repeated down here. */
+/* The sign in screens have no bar: the way back to the app is the one button above the card. */
 export function Foot(_: { back?: boolean }) {
   return (
     <footer className="foot">
@@ -72,11 +72,8 @@ export function AuthCard({ title, step, onSubmit, children }: { title: string; s
   useEffect(() => () => { lastGone = Date.now(); }, []);
   return (
     <div className="auth">
-      <header className="gt">
-        <a className="gt-brand" href="https://pmcstudios.uk" aria-label="PMC Studios"><Mark className="mark" /><span className="gt-tag">ID</span></a>
-        {from ? <div className="gt-end"><a className="tb-back" href={from.url} onClick={leave} aria-label={`Back to ${from.name}`}><Ic n="back" s={20} /><span>{from.name}</span></a></div> : null}
-      </header>
       <main className="auth-mid">
+        {from ? <div className="auth-top"><a className="btn small" href={from.url} onClick={leave} aria-label={`Back to ${from.name}`}><Ic n="back" s={18} />{from.name}</a></div> : null}
         <div className={'split ' + (flow ? 'in-flow' : 'in-first')} ref={box}>
           <div className="split-l">
             <div className="ht" aria-hidden="true"><i /><i /><i /></div>

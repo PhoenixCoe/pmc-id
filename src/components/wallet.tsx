@@ -1,13 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Field, useErrors } from './form';
+import { Field, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
-import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
+import { Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
-import { readPlan } from '@/lib/supabase';
+import { ApiError, readPlan, sayErr, signIn } from '@/lib/supabase';
 import type { Plan } from '@/lib/supabase';
 import { brand, luhn } from '@/lib/validate';
-import { needsPin, open as openWallet, restoreKey, seal, wipeWallet } from '@/lib/wallet';
+import { clearCards, open as openWallet, seal, testPassword, unlockWithPassword } from '@/lib/wallet';
 import type { Card } from '@/lib/wallet';
 
 const SKINS = [['#B49A57', '#171717'], ['#337957', '#FBF6EC'], ['#171717', '#FBF6EC'], ['#6FB894', '#171717']];
@@ -35,35 +35,68 @@ function CardFace({ c, i, live, photo }: { c: Pick<Card, 'brand' | 'num' | 'name
   );
 }
 
+/** The lock on the gate. Its shackle lifts and swings open when the password is right, and rattles when it is wrong. */
+function Lock() {
+  return (
+    <svg className="lock" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+      <path className="lock-sh" d="M8 11V6h8v5" />
+      <rect className="lock-bd" x="4.5" y="11" width="15" height="10" fill="currentColor" />
+      <path className="lock-key" d="M12 14.5v3.5" stroke="var(--g1)" />
+    </svg>
+  );
+}
+
+/** Stand-in cards shown blurred behind the lock. They are made up: your real cards are not on the page until the wallet is open. */
+const STAND_IN = { brand: 'Card', num: '0000000000000000', name: 'Your name', mm: '12', yy: '30', img: '' };
+
 export function WalletPage() {
-  const { wallet, setWallet, notice, say, signOut } = useId_();
+  const { me, wallet, setWallet, notice, say } = useId_();
   const { errors, fail, clear, bad } = useErrors();
-  const [adding, setAdding] = useState(false), [settingPin, setSettingPin] = useState(false);
-  const [pinOn, setPinOn] = useState(false), [ready, setReady] = useState(false), [keyOk, setKeyOk] = useState(true), [broken, setBroken] = useState(false);
+  const [adding, setAdding] = useState(false), [broken, setBroken] = useState(false), [busy, setBusy] = useState(false);
+  const [opening, setOpening] = useState(false), [nope, setNope] = useState(false);
+  const rattle = () => { setNope(true); window.setTimeout(() => setNope(false), 500); };
   const [f, setF] = useState({ name: '', num: '', mm: '', yy: '' }), [photo, setPhoto] = useState('');
-  const [p1, setP1] = useState(''), [p2, setP2] = useState(''), [up, setUp] = useState('');
+  const [up, setUp] = useState('');
 
-  /* The wallet opens with the key made from your PMC ID password when you signed in. */
-  useEffect(() => { let live = true; restoreKey().then((ok) => { if (!live) return; setKeyOk(ok); setPinOn(needsPin()); setReady(true); }); return () => { live = false; }; }, []);
-  useEffect(() => {
-    if (!ready || !keyOk || wallet.cards || (pinOn && wallet.pin === null)) return;
-    let live = true;
-    openWallet(wallet.pin).then((c) => live && setWallet((w) => ({ ...w, cards: c })), () => live && setBroken(true));
-    return () => { live = false; };
-  }, [ready, keyOk, pinOn, wallet.cards, wallet.pin, setWallet]);
+  /* The wallet locks again when you leave this page. */
+  useEffect(() => () => setWallet((w) => (w.cards ? { ...w, cards: null } : w)), [setWallet]);
 
-  const locked = pinOn && wallet.pin === null && !wallet.cards && !broken;
+  const open_ = wallet.cards !== null;
   const cards = wallet.cards ?? [];
-  const save = async (next: Card[], pin: string | null) => { await seal(next, pin); setWallet((w) => ({ ...w, cards: next, pin })); };
-  const stop = () => { setAdding(false); setSettingPin(false); clear(); setF({ name: '', num: '', mm: '', yy: '' }); setPhoto(''); setP1(''); setP2(''); };
+  const save = async (next: Card[]) => { await seal(next); setWallet((w) => ({ ...w, cards: next })); };
+  const stop = () => { setAdding(false); clear(); setF({ name: '', num: '', mm: '', yy: '' }); setPhoto(''); };
 
-  const unlock = () => {
-    if (wallet.wait && Date.now() < wallet.wait) return void fail('up', `Too many tries. Wait ${Math.ceil((wallet.wait - Date.now()) / 1000)} seconds.`);
-    openWallet(up).then((c) => { setWallet({ cards: c, pin: up, fails: 0, wait: 0 }); setUp(''); }, () => {
-      const fails = wallet.fails + 1;
-      setWallet((w) => ({ ...w, fails, wait: fails >= 5 ? Date.now() + 30000 * Math.pow(2, fails - 5) : 0 }));
-      fail('up', fails >= 5 ? 'Too many tries. Wait a little and try again.' : 'That PIN is wrong.');
-    });
+  /* Opens the wallet with your PMC ID password. A wrong password is counted: five misses in a row and you wait. */
+  const unlock = async () => {
+    if (busy) return;
+    if (wallet.wait && Date.now() < wallet.wait) return void fail('wp', `Too many tries. Wait ${Math.ceil((wallet.wait - Date.now()) / 1000)} seconds.`);
+    if (!up) return void fail('wp', 'Type your password.');
+    setBusy(true);
+    try {
+      let ok = await testPassword(up);
+      let sure = ok === true;
+      if (!sure) {
+        // No cards yet, or they do not open: ask PMC ID whether the password is right.
+        try { await signIn(me?.email ?? '', up); sure = true; }
+        catch (e) {
+          if (e instanceof ApiError && (e.net || e.status === 429 || e.status >= 500)) return void fail('wp', sayErr(e));
+        }
+        if (sure && ok === false) { setBroken(true); return; }
+        ok = sure;
+      }
+      if (!ok) {
+        const fails = wallet.fails + 1;
+        setWallet((w) => ({ ...w, fails, wait: fails >= 5 ? Date.now() + 30000 * Math.pow(2, fails - 5) : 0 }));
+        rattle();
+        return void fail('wp', fails >= 5 ? 'Too many tries. Wait a little and try again.' : 'That password is wrong.');
+      }
+      await unlockWithPassword(up);
+      const c = await openWallet();
+      setOpening(true);                                   // the lock opens and the blur clears, then the cards show
+      const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      await new Promise((r) => window.setTimeout(r, calm ? 150 : 1050));
+      setWallet({ cards: c, fails: 0, wait: 0 }); setUp(''); setOpening(false);
+    } catch { setOpening(false); setBroken(true); } finally { setBusy(false); }
   };
 
   const addCard = () => {
@@ -72,15 +105,9 @@ export function WalletPage() {
     if (!(num.length >= 13 && luhn(num))) return void fail('cc', "That card number doesn't look right.");
     const okm = /^\d{2}$/.test(f.mm) && +f.mm >= 1 && +f.mm <= 12 && /^\d{2}$/.test(f.yy), exp = okm ? new Date(2000 + +f.yy, +f.mm, 1) : 0;
     if (!(okm && exp > now && +f.yy < (now.getFullYear() % 100) + 21)) return void fail('xm', "Type a date that hasn't passed: month, then year.");
-    save([...cards, { id: 'c' + Date.now(), name, num, mm: f.mm, yy: f.yy, brand: brand(num), img: photo }], wallet.pin).then(() => { stop(); setAdding(false); say('Card saved in this browser.'); });
+    save([...cards, { id: 'c' + Date.now(), name, num, mm: f.mm, yy: f.yy, brand: brand(num), img: photo }]).then(() => { stop(); setAdding(false); say('Card saved in this browser.'); });
   };
-  const savePin = () => {
-    if (!/^\d{4,6}$/.test(p1)) return void fail('p1', 'Use 4 to 6 numbers.');
-    if (p2 !== p1) return void fail('p2', "The two PINs don't match.");
-    save(cards, p1).then(() => { setPinOn(true); stop(); say('PIN saved.'); });
-  };
-  const removePin = () => save(cards, null).then(() => { setPinOn(false); say('PIN removed.'); });
-  const removeCard = (id: string) => save(cards.filter((c) => c.id !== id), wallet.pin).then(() => say('Card removed.'));
+  const removeCard = (id: string) => save(cards.filter((c) => c.id !== id)).then(() => say('Card removed.'));
 
   const onPhoto = (fl: File | undefined) => {
     setPhoto(''); if (!fl || !/^image\//.test(fl.type)) return;
@@ -92,27 +119,10 @@ export function WalletPage() {
     im.src = u;
   };
 
-  if (!ready) return null;
-  if (!keyOk) {
-    return (
-      <Panel title="Wallet">
-        <Rw label="Your wallet is locked" icon="lock" hint="Sign in again with your password to open it" act={<RowBtn label="Sign in again" onClick={() => void signOut('signin')} />} />
-      </Panel>
-    );
-  }
   if (broken) {
     return (
-      <Panel title="Wallet">
-        <Rw label="Your saved cards can't be opened" icon="lock" hint="They were locked with an older password. Remove them and add your cards again." act={<RowBtn label="Remove them" danger onClick={() => { wipeWallet(); setBroken(false); setPinOn(false); setWallet({ cards: [], pin: null, fails: 0, wait: 0 }); }} />} />
-      </Panel>
-    );
-  }
-  if (locked) {
-    return (
-      <Panel title="Wallet">
-        <EdRow label="PIN" form="unlock" saveLabel="Unlock" onCancel={() => undefined} onSubmit={unlock}>
-          <Field id="up" label="Enter your wallet PIN" error={errors.up}><input id="up" type="password" inputMode="numeric" maxLength={6} autoComplete="off" autoFocus value={up} onChange={(e) => { setUp(e.target.value.replace(/\D/g, '')); clear('up'); }} {...bad('up')} /></Field>
-        </EdRow>
+      <Panel title="Cards">
+        <Rw label="Your saved cards can't be opened" icon="lock" hint="They were locked with an older password or a PIN. Remove them and add your cards again." act={<RowBtn label="Remove them" danger onClick={() => { clearCards(); void unlockWithPassword(up).then(() => { setBroken(false); setUp(''); setWallet({ cards: [], fails: 0, wait: 0 }); }); }} />} />
       </Panel>
     );
   }
@@ -121,45 +131,55 @@ export function WalletPage() {
   return (
     <>
       <Panel title="Cards">
-        {cards.length ? (
-          <div className="cards">
-            {cards.map((c, i) => <div className="cardwrap" key={c.id}><CardFace c={c} i={i} /><div className="cw-act"><RowBtn label="Remove" onClick={() => removeCard(c.id)} /></div></div>)}
-          </div>
-        ) : null}
-        {adding ? null : <Rw label="Add a card" icon="plus" hint={cards.length ? 'Saved in this browser with your others' : 'No cards saved yet'} act={<RowBtn label="Add" onClick={() => { say(''); setAdding(true); }} />} />}
-        {adding ? (
-          <form className="rw ed addform" data-form="card" noValidate onSubmit={(e) => { e.preventDefault(); addCard(); }}>
-            <span className="rw-l">New card</span>
-            <div className="rw-f">
-              <div className="vprev" aria-hidden="true"><CardFace c={live} i={0} live photo={photo} /></div>
-              <Field id="cn" label="Name on card" error={errors.cn}><input id="cn" autoComplete="cc-name" autoFocus value={f.name} onChange={(e) => { setF({ ...f, name: e.target.value }); clear('cn'); }} {...bad('cn')} /></Field>
-              <Field id="cc" label="Card number" error={errors.cc}><input id="cc" inputMode="numeric" autoComplete="cc-number" maxLength={23} value={f.num} onChange={(e) => { setF({ ...f, num: spaced(e.target.value.replace(/\D/g, '').slice(0, 19)) }); clear('cc'); }} {...bad('cc')} /></Field>
-              <div className="f"><span className="lab" id="xl">Expires</span>
-                <div className="dob exp" role="group" aria-labelledby="xl">
-                  <input id="xm" inputMode="numeric" maxLength={2} placeholder="MM" aria-label="Month" value={f.mm} {...bad('xm')} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setF({ ...f, mm: v }); clear('xm'); if (v.length === 2) document.getElementById('xy')?.focus(); }} />
-                  <span className="sl">/</span>
-                  <input id="xy" inputMode="numeric" maxLength={2} placeholder="YY" aria-label="Year" value={f.yy} onChange={(e) => { setF({ ...f, yy: e.target.value.replace(/\D/g, '') }); clear('xm'); }} />
+        {open_ ? (
+          <>
+            {cards.length ? (
+              <div className="cards">
+                {cards.map((c, i) => <div className="cardwrap" key={c.id}><CardFace c={c} i={i} /><div className="cw-act"><RowBtn label="Remove" onClick={() => removeCard(c.id)} /></div></div>)}
+              </div>
+            ) : null}
+            {adding ? null : <Rw label="Add a card" icon="plus" hint={cards.length ? 'Saved in this browser with your others' : 'No cards saved yet'} act={<RowBtn label="Add" onClick={() => { say(''); setAdding(true); }} />} />}
+            {adding ? (
+              <form className="rw ed addform" data-form="card" noValidate onSubmit={(e) => { e.preventDefault(); addCard(); }}>
+                <span className="rw-l">New card</span>
+                <div className="rw-f">
+                  <div className="vprev" aria-hidden="true"><CardFace c={live} i={0} live photo={photo} /></div>
+                  <Field id="cn" label="Name on card" error={errors.cn}><input id="cn" autoComplete="cc-name" autoFocus value={f.name} onChange={(e) => { setF({ ...f, name: e.target.value }); clear('cn'); }} {...bad('cn')} /></Field>
+                  <Field id="cc" label="Card number" error={errors.cc}><input id="cc" inputMode="numeric" autoComplete="cc-number" maxLength={23} value={f.num} onChange={(e) => { setF({ ...f, num: spaced(e.target.value.replace(/\D/g, '').slice(0, 19)) }); clear('cc'); }} {...bad('cc')} /></Field>
+                  <div className="f"><span className="lab" id="xl">Expires</span>
+                    <div className="dob exp" role="group" aria-labelledby="xl">
+                      <input id="xm" inputMode="numeric" maxLength={2} placeholder="MM" aria-label="Month" value={f.mm} {...bad('xm')} onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); setF({ ...f, mm: v }); clear('xm'); if (v.length === 2) document.getElementById('xy')?.focus(); }} />
+                      <span className="sl">/</span>
+                      <input id="xy" inputMode="numeric" maxLength={2} placeholder="YY" aria-label="Year" value={f.yy} onChange={(e) => { setF({ ...f, yy: e.target.value.replace(/\D/g, '') }); clear('xm'); }} />
+                    </div>
+                    {errors.xm ? <p className="err" role="alert">{errors.xm}</p> : null}
+                  </div>
+                  <div className="f"><label htmlFor="cp">Photo of the card front <small>Optional</small></label>
+                    <input id="cp" type="file" accept="image/*" capture="environment" className="filein" onChange={(e) => onPhoto(e.target.files?.[0])} />
+                    <p className="hint">Saved in this browser with your card. Leave it blank to use the card above.</p>
+                  </div>
+                  <div className="acts"><button className="btn" type="button" onClick={() => { stop(); }}>Cancel</button><button className="btn primary" type="submit">Save card</button></div>
                 </div>
-                {errors.xm ? <p className="err" role="alert">{errors.xm}</p> : null}
-              </div>
-              <div className="f"><label htmlFor="cp">Photo of the card front <small>Optional</small></label>
-                <input id="cp" type="file" accept="image/*" capture="environment" className="filein" onChange={(e) => onPhoto(e.target.files?.[0])} />
-                <p className="hint">Saved in this browser with your card. Leave it blank to use the card above.</p>
-              </div>
-              <div className="acts"><button className="btn" type="button" onClick={() => { stop(); }}>Cancel</button><button className="btn primary" type="submit">Save card</button></div>
-            </div>
-          </form>
-        ) : null}
-        {settingPin ? (
-          <EdRow label="Wallet PIN" form="pin" saveLabel="Save PIN" onCancel={stop} onSubmit={savePin}>
-            <Field id="p1" label="New PIN" hint="4 to 6 numbers" error={errors.p1}><input id="p1" type="password" inputMode="numeric" maxLength={6} autoComplete="off" value={p1} onChange={(e) => { setP1(e.target.value.replace(/\D/g, '')); clear('p1'); }} {...bad('p1')} /></Field>
-            <Field id="p2" label="Type it again" error={errors.p2}><input id="p2" type="password" inputMode="numeric" maxLength={6} autoComplete="off" value={p2} onChange={(e) => { setP2(e.target.value.replace(/\D/g, '')); clear('p2'); }} {...bad('p2')} /></Field>
-          </EdRow>
+              </form>
+            ) : null}
+          </>
         ) : (
-          <Rw label="Wallet PIN" icon="lock" hint={pinOn ? 'Asked before your cards show' : 'Your PMC ID password locks the wallet'} val={pinOn ? <span className="tag">On</span> : null}
-            act={pinOn ? <RowBtn label="Remove PIN" onClick={removePin} /> : <RowBtn label="Set a PIN" onClick={() => { say(''); setSettingPin(true); }} />} />
+          <div className={'vault' + (opening ? ' opening' : '')}>
+            <div className="vault-bg" aria-hidden="true" inert>
+              <div className="vault-in">
+                <div className="cards"><div className="cardwrap"><CardFace c={STAND_IN} i={0} /></div><div className="cardwrap"><CardFace c={STAND_IN} i={1} /></div></div>
+                <div className="rw"><span className="rw-l"><span className="rw-t"><b>Add a card</b><small>Saved in this browser with your others</small></span></span></div>
+              </div>
+            </div>
+            <form className={'vault-gate' + (opening ? ' open' : '') + (nope ? ' nope' : '')} noValidate onSubmit={(e) => { e.preventDefault(); void unlock(); }} aria-labelledby="vault-t">
+              <span className="vault-ic" aria-hidden="true"><Lock /></span>
+              <h3 id="vault-t">{opening ? 'Unlocked' : 'Your cards are locked'}</h3>
+              <Field id="wp" label="Enter your PMC ID password" error={errors.wp}><PwInput id="wp" auto="current-password" value={up} onChange={(v) => { setUp(v); clear('wp'); }} invalid={!!errors.wp} /></Field>
+              <button className="btn primary" type="submit" disabled={busy}>{opening ? 'Opening…' : busy ? 'Checking…' : 'Unlock'}</button>
+            </form>
+          </div>
         )}
-        <p className="pnote"><Ic n="lock" s={16} />Saved in this browser only, never on our servers.</p>
+        {open_ ? <p className="pnote"><Ic n="lock" s={16} />Saved in this browser only, never on our servers.</p> : null}
       </Panel>
       <Ok text={notice} />
       <Subscriptions />

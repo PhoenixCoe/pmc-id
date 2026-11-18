@@ -178,13 +178,25 @@ textarea { resize: vertical; min-height: 160px; line-height: 1.5; }
 .swt-t { display: flex; align-items: center; gap: 11px; min-width: 0; }
 .swt-l { font-family: var(--d); text-transform: uppercase; font-size: 1.12rem; line-height: 1.05; cursor: pointer; }
 .swt-h { margin: 3px 0 0; font-size: 0.88rem; line-height: 1.4; opacity: 0.8; }
-.swt-b { flex: none; position: relative; width: 58px; height: 32px; border: 3px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; transition: background 0.16s; }
-.swt-b i { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; background: var(--ink); transition: transform 0.2s var(--x), background 0.16s; }
-.swt.on .swt-b { background: var(--g1); }
-.swt.on .swt-b i { transform: translateX(26px); background: var(--cream); }
-.swt.off { opacity: 0.5; }
-.swt-b:focus-visible { outline: 4px solid var(--g1); outline-offset: 3px; }
-.swt-b:active { box-shadow: 1px 1px 0 var(--ink); }
+@property --kx{syntax:'<number>';inherits:true;initial-value:0}
+@property --kw{syntax:'<number>';inherits:true;initial-value:22}
+
+/* Toggle: PMC green when on, PMC red when off, in every theme. Drag it (it pulls back unless you mean it) or click it. */
+button.swt-b{--kx:0;--kw:22;touch-action:pan-y;-webkit-user-select:none;user-select:none;transition:--kx .5s cubic-bezier(.34,1.5,.64,1),--kw .16s cubic-bezier(.3,.9,.3,1)}
+button.swt-b[aria-checked='true']{--kx:26}
+button.swt-b:active:not(:disabled){--kw:28}
+button.swt-b.pmc-drag{transition:none}
+
+button.swt-b{flex:none;position:relative;width:58px;height:32px;padding:0;border:3px solid var(--ink);border-radius:0;background:#A33A2B;background:color-mix(in srgb,#337957 clamp(0%,var(--kx) * 3.846%,100%),#A33A2B);box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:box-shadow .14s cubic-bezier(.3,.9,.3,1),--kx .5s cubic-bezier(.34,1.5,.64,1),--kw .16s cubic-bezier(.3,.9,.3,1)}
+button.swt-b.pmc-drag{transition:none}
+button.swt-b:hover:not(:disabled){box-shadow:4px 4px 0 var(--ink)}
+button.swt-b:active:not(:disabled){box-shadow:1px 1px 0 var(--ink)}
+button.swt-b i{position:absolute;top:2px;left:2px;height:22px;background-color:#FBF6EC;background-repeat:no-repeat;background-position:center;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M3.5 10.5L8 15L16.5 5' fill='none' stroke='%23337957' stroke-width='4.4' stroke-linecap='square'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 4.5L15.5 15.5M15.5 4.5L4.5 15.5' fill='none' stroke='%23A33A2B' stroke-width='4.4' stroke-linecap='square'/%3E%3C/svg%3E");background-size:calc(clamp(0,(var(--kx) - 6) / 14,1) * 12px) calc(clamp(0,(var(--kx) - 6) / 14,1) * 12px),calc(clamp(0,(20 - var(--kx)) / 14,1) * 12px) calc(clamp(0,(20 - var(--kx)) / 14,1) * 12px);width:calc(var(--kw) * 1px);transform:translateX(calc((var(--kx) - (var(--kw) - 22) * var(--kx) / 26) * 1px));will-change:transform;transition:none}
+button.swt-b:focus-visible{outline:4px solid var(--g1);outline-offset:3px}
+button.swt-b:disabled,.swt.off button.swt-b{cursor:not-allowed;background:#A29E94;border-color:#76726A;box-shadow:3px 3px 0 #76726A}
+button.swt-b:disabled i,.swt.off button.swt-b i{background-color:#E6E2D8;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M3.5 10.5L8 15L16.5 5' fill='none' stroke='%238A867C' stroke-width='4.4' stroke-linecap='square'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M4.5 4.5L15.5 15.5M15.5 4.5L4.5 15.5' fill='none' stroke='%238A867C' stroke-width='4.4' stroke-linecap='square'/%3E%3C/svg%3E")}
+.swt.off{opacity:.7}
+@media (prefers-reduced-motion:reduce){button.swt-b{transition:none}}
 
 /* ---------- Slider ---------- */
 .sld { display: grid; gap: 6px; width: 100%; }
@@ -192,16 +204,28 @@ textarea { resize: vertical; min-height: 160px; line-height: 1.5; }
 .sld-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .sld-l { display: inline-flex; align-items: center; gap: 7px; font-family: var(--d); text-transform: uppercase; font-size: 1.1rem; line-height: 1; }
 .sld-v { margin-left: auto; font-family: var(--d); text-transform: uppercase; font-size: 1rem; padding: 3px 8px; background: var(--ink); color: var(--cream); white-space: nowrap; }
-.sld-in { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0; background: transparent; cursor: pointer; touch-action: pan-y; }
-.sld-in:disabled { cursor: not-allowed; }
-.sld-in::-webkit-slider-runnable-track { height: 14px; border: 3px solid var(--ink); background: linear-gradient(to right, var(--g1) 0 var(--p), var(--paper) var(--p) 100%); }
-.sld-in::-moz-range-track { height: 8px; border: 3px solid var(--ink); background: var(--paper); }
-.sld-in::-moz-range-progress { height: 8px; background: var(--g1); }
-.sld-in::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 30px; margin-top: -8px; background: var(--gold); border: 3px solid var(--ink); border-radius: 0; box-shadow: 3px 3px 0 var(--ink); }
-.sld-in::-moz-range-thumb { width: 16px; height: 24px; background: var(--gold); border: 3px solid var(--ink); border-radius: 0; box-shadow: 3px 3px 0 var(--ink); }
-.sld-in:active::-webkit-slider-thumb { background: var(--cream); }
-.sld-in:active::-moz-range-thumb { background: var(--cream); }
-.sld-in:focus-visible { outline: 4px solid var(--g1); outline-offset: 3px; }
+/* Slider: the fill and the handle follow one number (--f, 0 to 1) that glides to each new value. */
+@property --f{syntax:'<number>';inherits:false;initial-value:0}
+@property --lift{syntax:'<number>';inherits:false;initial-value:0}
+@property --sh{syntax:'<number>';inherits:false;initial-value:3}
+.sld-in{-webkit-appearance:none;appearance:none;display:block;box-sizing:border-box;width:100%;height:36px;margin:-2px 0;padding:0 5px 0 0;border:0;border-radius:0;background-color:transparent;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent;--f:0;--lift:0;--sh:3;--s-ink:var(--ink);--s-gold:var(--gold);--s-fill:var(--g1);--s-bed:var(--paper);
+  background-repeat:no-repeat;
+  background-origin:content-box,content-box,content-box,border-box,border-box,border-box;
+  background-image:linear-gradient(var(--s-gold),var(--s-gold)),linear-gradient(var(--s-ink),var(--s-ink)),linear-gradient(var(--s-ink),var(--s-ink)),linear-gradient(var(--s-fill),var(--s-fill)),linear-gradient(var(--s-bed),var(--s-bed)),linear-gradient(var(--s-ink),var(--s-ink));
+  background-size:16px 24px,22px 30px,22px 30px,calc((100% - 27px) * var(--f) + 8px) 8px,calc(100% - 6px) 8px,100% 14px;
+  background-position:calc(var(--f) * 100% - var(--f) * 6px + 3px) calc(50% - var(--lift) * 1px),calc(var(--f) * 100%) calc(50% - var(--lift) * 1px),calc(var(--f) * 100% + var(--sh) * 1px) calc(50% - var(--lift) * 1px + var(--sh) * 1px),3px 50%,3px 50%,0 50%;
+  transition:--f .16s cubic-bezier(.2,.8,.2,1),--lift .14s cubic-bezier(.3,.9,.3,1),--sh .14s cubic-bezier(.3,.9,.3,1)}
+.sld-in:hover:not(:disabled){--lift:2;--sh:5}
+.sld-in:active:not(:disabled){--lift:-1;--sh:1;transition-duration:.07s,.05s,.05s}
+.sld-in:focus-visible{outline:4px solid var(--g1);outline-offset:3px}
+.sld-in:disabled{cursor:not-allowed;--s-ink:#76726A;--s-gold:#E6E2D8;--s-fill:#A29E94;--s-bed:#E6E2D8}
+.sld-in::-webkit-slider-runnable-track{height:36px;border:0;background:transparent}
+.sld-in::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:30px;margin-top:3px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.sld-in::-moz-range-track{height:36px;border:0;background:transparent}
+.sld-in::-moz-range-progress{background:transparent}
+.sld-in::-moz-range-thumb{width:22px;height:30px;border:0;border-radius:0;background:transparent;box-shadow:none}
+@media (prefers-reduced-motion:reduce){.sld-in,.sld-in:active{transition:none}}
+html[data-motion='calm'] .sld-in{transition:none}
 .sld-marks { position: relative; height: 22px; margin: -2px 11px 0; }
 .sld-marks button { position: absolute; transform: translateX(-50%); font-family: var(--t); font-size: 0.78rem; line-height: 1; padding: 3px 2px; color: var(--ink); opacity: 0.7; white-space: nowrap; }
 .sld-marks button:hover { opacity: 1; text-decoration: underline; }
@@ -601,6 +625,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 
 /* Logo top left, title bottom left, steps centred under the card */
 .auth-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; }
+.auth-top { width: min(1000px, 100%); display: flex; margin-bottom: -16px; }
 .split-l { min-height: 300px; }
 .split-l h1 { margin-top: auto; }
 .steps { display: grid; grid-template-columns: repeat(6, 44px); gap: 8px; margin: 0; padding: 0; }
@@ -1000,3 +1025,39 @@ a, button, summary, input, select, textarea, [role='button'], [role='tab'], [rol
 .gt .tb-help:hover, .gt .tb-back:hover, .gt .pb-btn:hover, .gt .pa-btn:hover, .gt .pb-btn[aria-expanded=true], .gt .pa-btn[aria-expanded=true] { background: transparent; color: var(--paper); box-shadow: 3px 3px 0 var(--g1); }
 .gt .pa-btn:hover, .gt .pa-btn[aria-expanded=true] { background: var(--pa-cbg, #B49A57); color: var(--pa-cfg, var(--ink)); }
 .gt .tb-help:active, .gt .tb-back:active, .gt .pb-btn:active, .gt .pa-btn:active { box-shadow: 0 0 0 var(--g1); }
+
+/* ---------- Wallet lock: the cards stay blurred until the password is typed ---------- */
+.vault { position: relative; display: grid; place-items: center; min-height: 380px; overflow: hidden; border-top: 0; }
+.vault-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; user-select: none; }
+.vault-in { position: absolute; inset: 0; filter: blur(7px) saturate(1.35) contrast(1.15); transform: scale(1.05); }
+.vault-in .cards { border-top: 0; }
+.vault-in .rw { border-top: 3px solid var(--ink); }
+/* A comic book print screen over the covered cards: ink dots that thin out towards the top, and a second grid of green dots sitting between them. */
+.vault-bg::before, .vault-bg::after { content: ''; position: absolute; inset: 0; }
+.vault-bg::before { background: radial-gradient(circle at 50% 50%, var(--ink) 0 2.6px, transparent 3.1px) 0 0 / 10px 10px; -webkit-mask-image: linear-gradient(200deg, #000 0, rgba(0, 0, 0, 0.35) 70%); mask-image: linear-gradient(200deg, #000 0, rgba(0, 0, 0, 0.35) 70%); opacity: 0.7; }
+.vault-bg::after { background: radial-gradient(circle at 50% 50%, var(--g1) 0 1.8px, transparent 2.3px) 5px 5px / 10px 10px; opacity: 0.55; }
+.vault-gate { position: relative; z-index: 1; display: grid; gap: 16px; width: min(100% - 32px, 440px); margin: 36px 16px; padding: 26px 26px 24px; background: var(--paper); border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--g2); animation: pmc-pop .22s var(--x, ease) backwards; }
+.vault-gate h3 { margin: 0; font: 400 2rem/1 var(--d); text-transform: uppercase; }
+.vault-ic { display: grid; place-items: center; width: 52px; height: 52px; background: var(--g1); color: var(--white); border: 3px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.vault-gate .btn { justify-self: stretch; min-height: 52px; font-size: 1.3rem; }
+@media (max-width: 800px) { .vault { min-height: 340px; } .vault-gate { padding: 20px 18px; } .vault-gate h3 { font-size: 1.7rem; } }
+
+/* The lock opens: the shackle lifts and swings, the key mark lights up, the gate lifts away and the blur clears. */
+.lock { display: block; overflow: visible; }
+.lock-sh { transform-box: view-box; transform-origin: 16px 11px; transition: transform 0.5s cubic-bezier(0.3, 0.9, 0.3, 1.35); }
+.lock-key { transition: stroke 0.2s; }
+.vault-in { transition: filter 0.65s cubic-bezier(0.3, 0.9, 0.3, 1) 0.5s, transform 0.65s cubic-bezier(0.3, 0.9, 0.3, 1) 0.5s; }
+.vault-bg::before, .vault-bg::after { transition: opacity 0.5s ease 0.5s; }
+.vault-gate { transition: opacity 0.3s ease 0.72s, transform 0.3s ease 0.72s; }
+.vault-ic { transition: background-color 0.25s; }
+.vault.opening .vault-in { filter: none; transform: scale(1); }
+.vault.opening .vault-bg::before, .vault.opening .vault-bg::after { opacity: 0; }
+.vault-gate.open { opacity: 0; transform: translateY(-14px) scale(0.97); pointer-events: none; }
+.vault-gate.open .lock-sh { transform: translateY(-3.5px) rotate(-24deg); }
+.vault-gate.open .lock-key { stroke: #fff; }
+.vault-gate.open .vault-ic { background: var(--g2); }
+.vault-gate.nope { animation: pmc-shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.vault-gate.nope .lock-sh { animation: pmc-rattle 0.42s ease both; }
+@keyframes pmc-shake { 10%, 90% { translate: -2px 0; } 20%, 80% { translate: 5px 0; } 30%, 50%, 70% { translate: -8px 0; } 40%, 60% { translate: 8px 0; } }
+@keyframes pmc-rattle { 20% { transform: translateY(-1.5px) rotate(-8deg); } 45% { transform: rotate(6deg); } 70% { transform: translateY(-1px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .lock-sh, .vault-in, .vault-bg::before, .vault-bg::after, .vault-gate, .vault-ic { transition-duration: 0.01s; transition-delay: 0s; } .vault-gate.nope, .vault-gate.nope .lock-sh { animation: none; } }
