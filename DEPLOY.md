@@ -1,4 +1,4 @@
-# Putting PMC ID online (accounts.pmcstudios.uk)
+# Putting PMC ID online (id.pmcstudios.uk)
 
 GitHub Pages hosts plain files, so the site is built as a static export (`npm run build:static`, written to `out/`).
 Sign in uses the real PMC account system (Supabase). Step 3 connects it.
@@ -10,10 +10,10 @@ Sign in uses the real PMC account system (Supabase). Step 3 connects it.
 4. Repository > **Settings** > **Pages** (left menu) > Build and deployment > Source: **GitHub Actions**.
 5. **Code** tab > **Add file** > **Create new file**. In the name box type `.github/workflows/pages.yml` (typing each `/` starts a folder). Paste everything from `1-create-this-file-on-GitHub/pages.yml`. Press **Commit changes**. (Browser uploads often skip folders that start with a dot, which is why this file comes separately too.)
 6. **Actions** tab. Wait for the green tick on "Deploy PMC ID" (about 3 minutes).
-7. Settings > Pages > **Custom domain**: type `accounts.pmcstudios.uk` > **Save**.
-8. Where pmcstudios.uk's DNS is managed (Cloudflare dashboard > pmcstudios.uk > **DNS** > **Records** > **Add record**): Type `CNAME`, Name `accounts`, Target `<your-github-name>.github.io`, Proxy status **DNS only** (grey cloud). **Save**.
+7. Settings > Pages > **Custom domain**: type `id.pmcstudios.uk` > **Save**.
+8. Where pmcstudios.uk's DNS is managed (Cloudflare dashboard > pmcstudios.uk > **DNS** > **Records** > **Add record**): Type `CNAME`, Name `id`, Target `<your-github-name>.github.io`, Proxy status **DNS only** (grey cloud). **Save**.
 9. Back in Settings > Pages, wait for "DNS check successful" (minutes, sometimes a few hours). Tick **Enforce HTTPS**.
-10. Open https://accounts.pmcstudios.uk and press Ctrl+Shift+R. To check everything at once, run `node check-setup.mjs` (Node 18 or newer). Every line should say `ok`.
+10. Open https://id.pmcstudios.uk and press Ctrl+Shift+R. To check everything at once, run `node check-setup.mjs` (Node 18 or newer). Every line should say `ok`.
 
 ## Make the emails send (codes, password reset)
 Supabase's built-in email only sends to people on your Supabase team, and only 2 an hour. That is why codes did not arrive. Fix it once with Resend (free: 100 emails a day, 3,000 a month).
@@ -21,14 +21,14 @@ Supabase's built-in email only sends to people on your Supabase team, and only 2
 2. On the domain page, **Records** tab: add every record shown to Cloudflare (Cloudflare > pmcstudios.uk > **DNS** > **Records** > **Add record**, one at a time, copied exactly). Set **Proxy status** to **DNS only** (grey cloud). If Resend shows a button to sign in to Cloudflare, use that and the records add themselves.
 3. Press **Verify DNS Records**. It says **Verified** in a few minutes (can take longer; up to 72 hours at worst).
 4. Resend > **API Keys** > **Create API Key**. Name `supabase`, permission **Sending access**, domain `updates.pmcstudios.uk`. **Add**. Copy the key now (starts `re_`). You only see it once.
-5. Supabase > your project > **Authentication** > **Emails** > **SMTP Settings**. Turn on **Enable custom SMTP**. Fill in: Sender email `no-reply@updates.pmcstudios.uk`, Sender name `PMC ID`, Host `smtp.resend.com`, Port `465`, Username `resend`, Password the `re_` key. **Save**.
+5. Supabase > your project > **Authentication** > **Notifications** > **Email** > **SMTP Settings**. Turn on **Enable custom SMTP**. Fill in: Sender email `no-reply@updates.pmcstudios.uk`, Sender name `PMC ID`, Host `smtp.resend.com`, Port `465`, Username `resend`, Password the `re_` key. **Save**.
 6. Supabase > **Authentication** > **Rate Limits**. Raise **Emails sent per hour** (after custom SMTP it starts low at 30) to 100. Save.
-7. Supabase > **Authentication** > **Emails** > **Templates**. For each one, paste the subject and the whole file from the `emails` folder into **Message body**, then **Save**:
+7. Supabase > **Authentication** > **Notifications** > **Email** > **Templates**. For each one, paste the subject and the whole file from the `emails` folder into **Message body** (the box that takes HTML), then **Save**:
    - **Confirm sign up**: subject `Your PMC ID code`, body `emails/confirm-signup.html`.
    - **Reset password**: subject `Reset your PMC ID password`, body `emails/reset-password.html`.
    - **Reauthentication**: subject `Confirm it is you`, body `emails/reauthentication.html`.
-   - **Password changed** (optional security email, sent after a password change): subject `Your PMC ID password was changed`, body `emails/password-changed.html`. Switch its notification on if there is a toggle next to it.
-8. Test: open PMC ID in a private window, make an account with an email that is not on your Supabase team. The code arrives in under a minute (check junk once).
+   - **Password changed** (optional security email, sent after a password change): subject `Your PMC ID password was changed`, body `emails/password-changed.html`. If you do not see it, click your profile picture (bottom left) > **Feature previews** > switch on **Security notification templates**, then switch its notification on.
+8. Test: open PMC ID in a private window, make an account with an email that is not on your Supabase team. The code arrives in under a minute (check junk once) and the six boxes show the digits. If the code ever shows as one box instead of six, your code length is not 6 (Authentication > Sign In / Providers > Email > **Email OTP Length**); the email still works.
 
 ## Supabase checklist
 1. SQL editor: Coe's `setup.sql` has been run (it makes `profiles`, `app_access` and `pmc_delete_me`).
