@@ -22,13 +22,13 @@ Supabase's built-in email only sends to people on your Supabase team, and only 2
 3. Press **Verify DNS Records**. It says **Verified** in a few minutes (can take longer; up to 72 hours at worst).
 4. Resend > **API Keys** > **Create API Key**. Name `supabase`, permission **Sending access**, domain `updates.pmcstudios.uk`. **Add**. Copy the key now (starts `re_`). You only see it once.
 5. Supabase > your project > **Authentication** > **Notifications** > **Email** > **SMTP Settings**. Turn on **Enable custom SMTP**. Fill in: Sender email `no-reply@updates.pmcstudios.uk`, Sender name `PMC ID`, Host `smtp.resend.com`, Port `465`, Username `resend`, Password the `re_` key. **Save**.
-6. Supabase > **Authentication** > **Rate Limits**. Raise **Emails sent per hour** (after custom SMTP it starts low at 30) to 100. Save.
+6. Supabase > **Authentication** > **Rate Limits**. Raise **Emails sent per hour** (after custom SMTP it starts low at 30) to 100. Save. Then open **Authentication** > **Sign In / Providers** > **Email** and set **Email OTP Length** to **6**. Save.
 7. Supabase > **Authentication** > **Notifications** > **Email** > **Templates**. For each one, paste the subject and the whole file from the `emails` folder into **Message body** (the box that takes HTML), then **Save**:
    - **Confirm sign up**: subject `Your PMC ID code`, body `emails/confirm-signup.html`.
    - **Reset password**: subject `Reset your PMC ID password`, body `emails/reset-password.html`.
    - **Reauthentication**: subject `Confirm it is you`, body `emails/reauthentication.html`.
    - **Password changed** (optional security email, sent after a password change): subject `Your PMC ID password was changed`, body `emails/password-changed.html`. If you do not see it, click your profile picture (bottom left) > **Feature previews** > switch on **Security notification templates**, then switch its notification on.
-8. Test: open PMC ID in a private window, make an account with an email that is not on your Supabase team. The code arrives in under a minute (check junk once) and the six boxes show the digits. If the code ever shows as one box instead of six, your code length is not 6 (Authentication > Sign In / Providers > Email > **Email OTP Length**); the email still works.
+8. Test: open PMC ID in a private window, make an account with an email that is not on your Supabase team. The code arrives in under a minute (check junk once) and its digits sit in separate boxes. The code is 6 numbers. If the email shows more than 6, set **Email OTP Length** in Supabase (Authentication > Sign In / Providers > Email) to **6** and save. It must match `OTP_LENGTH` in `src/lib/otp.ts`. The email shows 6 or 8 boxes by itself (any other length shows one box).
 
 ## Supabase checklist
 1. SQL editor: Coe's `setup.sql` has been run (it makes `profiles`, `app_access` and `pmc_delete_me`).

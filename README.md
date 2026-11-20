@@ -42,7 +42,7 @@ Numbered steps are in **DEPLOY.md** (GitHub Pages, accounts.pmcstudios.uk).
 
 ## What the Supabase project needs
 - Coe's `setup.sql` already run (tables `profiles` and `app_access`, and the function `pmc_delete_me`).
-- Authentication > Email templates: **Confirm signup**, **Reset password** and **Reauthentication** each show the 6 digit code `{{ .Token }}`, not a link.
+- Authentication > Email templates: **Confirm signup**, **Reset password** and **Reauthentication** each show the emailed code `{{ .Token }}`, not a link. The code is 6 numbers long: set **Email OTP Length** in Supabase (Authentication > Sign In / Providers > Email) to **6**. It must match `OTP_LENGTH` in `src/lib/otp.ts`.
 
 ## Never put on this site
 A Supabase **secret** or **service_role** key. Only the project URL and the public (publishable or anon) key are ever safe here.

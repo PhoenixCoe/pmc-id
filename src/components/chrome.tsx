@@ -60,11 +60,16 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
     const end = (e: TransitionEvent) => { if (e.target === el && e.propertyName === 'height') done(); };
     el.addEventListener('transitionend', end);
     sync();
+    /* Watch what is inside the form, not the form box itself: the box stretches to the card's height (so the buttons sit on the card's bottom line), and watching it would
+       restart the easing on every frame of the easing. */
     const ro = new ResizeObserver(sync);
-    ro.observe(content); ro.observe(head);
+    const watch = () => { ro.disconnect(); ro.observe(head); for (const c of Array.from(content.children)) ro.observe(c); };
+    watch();
+    const mo = new MutationObserver(() => { watch(); sync(); });
+    mo.observe(content, { childList: true });
     let gone = false;
     document.fonts.ready.then(() => { if (!gone) { fontsReady = true; if (!animating) lastHeight = el.getBoundingClientRect().height; } });
-    return () => { gone = true; ro.disconnect(); el.removeEventListener('transitionend', end); };
+    return () => { gone = true; ro.disconnect(); mo.disconnect(); el.removeEventListener('transitionend', end); };
   }, [box, inner, lead, flow]);
 }
 

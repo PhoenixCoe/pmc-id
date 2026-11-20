@@ -4,6 +4,7 @@ import { AuthCard, Acts, Av, BackLink } from './chrome';
 import { CodeBoxes, Dob, Field, Meter, PmcSelect, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
 import { Err } from './err';
+import { OTP_LENGTH } from '@/lib/otp';
 import { keyToPath, linkClick } from '@/lib/route';
 import { useId_, EMPTY_DRAFT } from './state';
 import { ApiError, handBack, getSession, recover, resendSignup, saveSession, sayErr, setPasswordWith, signIn, signUp, toSession, verifyCode, writeProfile } from '@/lib/supabase';
@@ -116,7 +117,7 @@ export function Reset() {
       try { await recover(e); setEm(e); setStage(2); startCool(); } catch (x) { fail('em', sayErr(x)); }
       setBusy(false); return;
     }
-    if (code.length < 6) return void fail('code', 'Type all 6 numbers from the email.');
+    if (code.length < OTP_LENGTH) return void fail('code', `Type all ${OTP_LENGTH} numbers from the email.`);
     if (strength(pw) < 3) return void fail('pw', 'Make it stronger: the bar needs to reach the third step.');
     if (pw !== pw2) return void fail('pw2', "The two passwords don't match.");
     setBusy(true);
@@ -204,7 +205,7 @@ export function Create({ n }: { n: number }) {
       setBusy(false); return;
     }
     if (n === 6) {
-      if (!/^\d{6}$/.test(code ?? '')) return void fail('code', 'Type all 6 numbers from the email.');
+      if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code ?? '')) return void fail('code', `Type all ${OTP_LENGTH} numbers from the email.`);
       setBusy(true);
       try { await complete(await verifyCode('signup', draft.email, code!)); } catch (e) { setBusy(false); fail('code', sayErr(e, 'code')); setCodeKey(codeKey + 1); }
       return;
@@ -259,9 +260,9 @@ export function Create({ n }: { n: number }) {
         <>
           <h2>Check it all</h2>
           <div className="review"><Av u={{ img: '' }} /><dl>
-            <div><dt>Name</dt><dd>{`${draft.first} ${draft.last}`.trim()} <a className="edit" href={keyToPath('create-1')} onClick={(e) => linkClick(e, 'create-1')}><Ic n="pen" s={14} />Change</a></dd></div>
-            <div><dt>Email</dt><dd>{draft.email} <a className="edit" href={keyToPath('create-3')} onClick={(e) => linkClick(e, 'create-3')}><Ic n="pen" s={14} />Change</a></dd></div>
-            <div><dt>Birthday</dt><dd>{`${draft.d}/${draft.m}/${draft.y}`} <a className="edit" href={keyToPath('create-2')} onClick={(e) => linkClick(e, 'create-2')}><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Name</dt><dd><span className="v">{`${draft.first} ${draft.last}`.trim()}</span><a className="edit" href={keyToPath('create-1')} onClick={(e) => linkClick(e, 'create-1')}><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Email</dt><dd><span className="v">{draft.email}</span><a className="edit" href={keyToPath('create-3')} onClick={(e) => linkClick(e, 'create-3')}><Ic n="pen" s={14} />Change</a></dd></div>
+            <div><dt>Birthday</dt><dd><span className="v">{`${draft.d}/${draft.m}/${draft.y}`}</span><a className="edit" href={keyToPath('create-2')} onClick={(e) => linkClick(e, 'create-2')}><Ic n="pen" s={14} />Change</a></dd></div>
           </dl></div>
           <p className="hint">Next we email you a code to check the address is yours.</p>
           {errors.form ? <Err id="form">{errors.form}</Err> : null}
