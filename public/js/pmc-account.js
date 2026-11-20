@@ -26,6 +26,30 @@
     close: 'M5 5l14 14M19 5L5 19',
   };
 
+  /* The scroll: a menu unrolls down from its button behind a rolled edge that thins out as it lands, and rolls back up when it closes.
+     One copy of this also sits in pmc-by.js; whichever file loads first provides window.PmcScroll. */
+  var SCROLL_CSS = '.pm-roll{position:absolute;left:0;right:0;bottom:0;height:0;z-index:9;pointer-events:none;background:#171717;box-shadow:inset 0 2px 0 #337957}';
+  if (!window.PmcScroll) window.PmcScroll = (function () {
+    var ROLL = 16;
+    function calm() { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    function stop(el) { var s = el._pm; if (!s) return; el._pm = null; try { s.a.cancel(); s.b.cancel(); } catch (e) { } if (s.bar.parentNode) s.bar.parentNode.removeChild(s.bar); el.style.overflow = s.overflow; el.style.transition = s.transition; }
+    function go(el, opening, done) {
+      if (!el || !el.animate || calm()) { if (done) done(); return; }
+      var cur = el._pm ? el.getBoundingClientRect().height : 0;
+      if (el._pm) stop(el);
+      var full = el.offsetHeight, cs = getComputedStyle(el), edge = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0), low = Math.min(full, edge + ROLL);
+      var bar = document.createElement('i'); bar.className = 'pm-roll'; bar.setAttribute('aria-hidden', 'true'); el.appendChild(bar);
+      var s = el._pm = { bar: bar, overflow: el.style.overflow, transition: el.style.transition };
+      el.style.overflow = 'hidden'; el.style.transition = 'none';
+      var time = opening ? 560 : 280, h = opening ? [cur || low, full] : [cur || full, low];
+      s.a = el.animate([{ height: h[0] + 'px' }, { height: h[1] + 'px' }], { duration: time, easing: opening ? 'cubic-bezier(.25,1,.5,1)' : 'cubic-bezier(.55,0,.8,.2)', fill: 'both' });
+      s.b = bar.animate(opening ? [{ height: ROLL + 'px' }, { height: ROLL + 'px', offset: .5 }, { height: '0px' }] : [{ height: '0px' }, { height: ROLL + 'px', offset: .4 }, { height: ROLL + 'px' }], { duration: time, easing: 'linear', fill: 'both' });
+      s.a.onfinish = function () { if (el._pm === s) stop(el); if (done) done(); };
+    }
+    return { open: function (el) { go(el, true); }, shut: function (el, done) { go(el, false, done); }, css: SCROLL_CSS };
+  })();
+  var PS = window.PmcScroll;
+
   var CSS = [
     ':root{--pa-ink:#171717;--pa-paper:#FBF6EC;--pa-shadow:#1A4934;--pa-accent:#337957;--pa-danger:#B3261E;--pa-frame:3px;--pa-radius:0px;--pa-lift:8px;',
     '--pa-font:"PMC Symbols L4 Upright","PMC Font Upright","PMC Font","Plex","Courier New",monospace;--pa-head:"PMC Symbols L2","PMC Header","Shoulders","Arial Narrow",Impact,sans-serif;--pa-case:uppercase}',
@@ -34,10 +58,9 @@
     '.pa-btn{display:grid;place-items:center;width:40px;height:40px;padding:0;overflow:hidden;background:var(--pa-cbg,#B49A57);color:var(--pa-cfg,var(--pa-ink));border:var(--pa-frame) solid var(--pa-ink);border-radius:var(--pa-radius);cursor:pointer;font:400 20px/1 var(--pa-head);text-transform:uppercase}',
     '.pa-btn:hover,.pa-btn[aria-expanded=true],.pa-btn:focus-visible{outline:none;box-shadow:3px 3px 0 var(--pa-shadow)}.pa-btn:hover,.pa-btn[aria-expanded=true]{transform:translate(-2px,-2px)}.pa-btn:active{transform:translate(1px,1px);box-shadow:0 0 0 var(--pa-shadow);transition-duration:.04s}.pa-btn{transition:transform .12s,box-shadow .12s,background-color .15s}.pa-pop :focus-visible{outline:none}.pa-foot a:focus-visible{background:var(--pa-accent);color:#FBF6EC;text-decoration:none;opacity:1}',
     '.pa-btn img,.pa-av img{width:100%;height:100%;object-fit:cover;display:block}',
-    '.pa-pop{position:fixed;z-index:2147483000;width:min(380px,calc(100vw - 16px));box-sizing:border-box;background:var(--pa-paper);color:var(--pa-ink);border:var(--pa-frame) solid var(--pa-ink);border-radius:var(--pa-radius);box-shadow:var(--pa-lift) var(--pa-lift) 0 var(--pa-shadow);font:400 14px/1.35 var(--pa-font);font-synthesis:none;overflow:hidden;transition:height .26s cubic-bezier(.16,1,.3,1);animation:pa-up .18s cubic-bezier(.16,1,.3,1)}',
+    '.pa-pop{position:fixed;z-index:2147483000;width:min(380px,calc(100vw - 16px));box-sizing:border-box;background:var(--pa-paper);color:var(--pa-ink);border:var(--pa-frame) solid var(--pa-ink);border-radius:var(--pa-radius);box-shadow:var(--pa-lift) var(--pa-lift) 0 var(--pa-shadow);font:400 14px/1.35 var(--pa-font);font-synthesis:none;overflow:hidden;transition:height .26s cubic-bezier(.16,1,.3,1)}',
     '.pa-look-flat.pa-pop,.pa-look-round.pa-pop{box-shadow:0 10px 30px rgba(0,0,0,.16)}',
-    '@keyframes pa-up{from{transform:translateY(10px);opacity:0}}',
-    '.pa-in{padding:10px}',
+        '.pa-in{padding:10px}',
     '.dpfp{width:62%;height:62%;width:round(down,62%,2px);height:round(down,62%,2px);display:block}.pa-av .dpfp{stroke-width:2}.pa-h{font-family:var(--pa-head);text-transform:var(--pa-case);font-weight:400;letter-spacing:.03em;line-height:.95}',
     '.pa-card{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:18px 14px;border:var(--pa-frame) solid var(--pa-ink);border-radius:var(--pa-radius);background:var(--pa-cbg,var(--pa-paper));color:var(--pa-cfg,var(--pa-ink));transition:background .2s,color .2s}',
     '.pa-card>*{position:relative;z-index:1}',
@@ -65,9 +88,10 @@
     '.pa-row:first-child{border-top:0}',
     '.pa-row:hover,.pa-row:focus-visible{background:var(--pa-ink);color:var(--pa-paper);outline:none}',
     '.pa-row.pa-so{color:var(--pa-danger)}.pa-row.pa-so:hover,.pa-row.pa-so:focus-visible{background:var(--pa-danger);color:#FBF6EC}',
-    '.pa-fl{display:grid;width:38px;flex:none}.pa-fl svg{width:100%;height:auto;display:block}.pa-fk{display:flex;gap:6px}.pa-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding:2px 0 0;font-size:11.5px;line-height:1.4}',
+    '.pa-fk{display:flex;gap:6px}.pa-foot{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:10px;padding:2px 0 0;font-size:11.5px;line-height:1.4}',
         '.pa-foot a{color:inherit;text-decoration:none;opacity:.85}.pa-foot a:hover{text-decoration:underline;opacity:1}',
-    '@media (prefers-reduced-motion:reduce){.pa-pop{animation:none;transition:none}}',
+    '@media (prefers-reduced-motion:reduce){.pa-pop{transition:none}}',
+    SCROLL_CSS,
   ].join('');
 
   var GOLD = '#B49A57', cache = {};
@@ -120,7 +144,7 @@
   function close() {
     if (!pop) return;
     if (ro) ro.disconnect();
-    pop.remove(); pop = null;
+    var gone = pop; pop = null; gone.style.pointerEvents = 'none'; PS.shut(gone, function () { gone.remove(); });
     document.removeEventListener('keydown', onKey, true);
     document.removeEventListener('pointerdown', onOut, true);
     if (opener) { opener.setAttribute('aria-expanded', 'false'); if (opener._pa) { opener.classList.remove('pa-on'); opener.innerHTML = opener._pa; opener.setAttribute('aria-label', 'Your PMC ID'); } opener.focus(); opener = null; }
@@ -143,7 +167,7 @@
     h += '</div>';
     h += '<div class="pa-grp"><a class="pa-row" href="' + esc(o.manage || 'https://id.pmcstudios.uk/info') + '">' + svg(I.pen) + 'Manage PMC ID</a></div>';
     if (o.onSettings) h += '<div class="pa-grp"><button class="pa-row" type="button" data-pa="settings">' + svg(I.gear) + 'Settings</button></div>';
-    h += '<div class="pa-foot">' + (o.footerLogo === false || !window.PmcLogo ? '' : '<span class="pa-fl" aria-hidden="true">' + PmcLogo.mark('mark') + '</span>') + '<span class="pa-fk"><a href="https://pmcstudios.uk/privacy">Privacy Policy</a> · <a href="https://pmcstudios.uk/terms">Terms of Service</a></span></div>';
+    h += '<div class="pa-foot"><span class="pa-fk"><a href="https://pmcstudios.uk/privacy">Privacy Policy</a> · <a href="https://pmcstudios.uk/terms">Terms of Service</a></span></div>';
     return h + '</div>';
   }
 
@@ -163,6 +187,7 @@
     pop.style.top = Math.min(r.bottom + 10, innerHeight - 20) + 'px';
     pop.style.right = Math.max(8, innerWidth - r.right) + 'px';
     anchor.setAttribute('aria-expanded', 'true');
+    PS.open(pop);
     if (anchor._pa != null) { anchor.classList.add('pa-on'); anchor.innerHTML = svg(I.close, 20); anchor.setAttribute('aria-label', 'Close'); }
     /* The box grows and shrinks smoothly when what is inside changes size. */
     var inner = pop.firstChild, last = 0;
