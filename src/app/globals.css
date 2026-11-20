@@ -700,7 +700,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 .glance .g1 { background: var(--g1); color: var(--white); } .glance .g2 { background: var(--gold); color: var(--ink); } .glance .g3 { background: var(--ink); color: var(--white); box-shadow: 7px 7px 0 var(--g1); }
 .todo { margin-top: 26px; } .todo-r { color: inherit; } .todo-r:hover { background: var(--tint); } .todo-r .go { justify-self: end; }
 @media (max-width: 760px) { .glance { grid-template-columns: 1fr; gap: 16px; } .glance b { font-size: 3.2rem; } }
-.dpfp { width: 62%; height: 62%; display: block; }
+.dpfp { width: 62%; height: 62%; width: round(down, 62%, 2px); height: round(down, 62%, 2px); display: block; }
 .glance { margin: 26px 0 0; }
 
 .nav .ns { display: none; }
@@ -964,7 +964,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 .foot a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .foot-back { color: var(--paper); }
 /* sign in and create: one card, a green head with the logo and the question, the form underneath */
-.auth { background: var(--paper); grid-template-rows: auto 1fr auto; }
+.auth { background: var(--paper); grid-template-rows: 1fr auto; }
 .split-l { background: var(--g1); color: var(--paper); border-bottom: 0; }
 .split-l .ht { color: var(--paper); opacity: .35; width: 380px; right: 0; left: auto; }
 @media (min-width: 761px) {

@@ -10,7 +10,7 @@ export function Av({ u }: { u: Pick<User, 'img'> }) {
   return (
     <span className="av">
       {u.img ? <img alt="" src={u.img} /> : (
-        <svg className="dpfp" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="miter" aria-hidden="true"><rect x="8" y="3" width="8" height="8" /><path d="M3 21v-6h18v6" /></svg>
+        <svg className="dpfp" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="miter" strokeLinecap="square" aria-hidden="true"><rect x="8" y="3" width="8" height="8" /><path d="M3 21v-6h18v6" /></svg>
       )}
     </span>
   );
