@@ -4,6 +4,7 @@ import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { STRENGTH_WORDS, strength } from '@/lib/validate';
 import { Ic } from './Ic';
 import { Err } from './err';
+import { OTP_LENGTH } from '@/lib/otp';
 
 /** Errors by field id. fail() shows the message under the field and moves focus to it. */
 export function useErrors() {
@@ -122,29 +123,30 @@ export function PmcSelect({ id, placeholder, options, value, onPick, labelledBy,
   );
 }
 
-/** Six boxes for the emailed code. A full set submits by itself. */
+/** One box for each number in the emailed code (see lib/otp.ts). A full set submits by itself. */
 export function CodeBoxes({ onFull, onChange, invalid, resetKey }: { onFull?: (code: string) => void; onChange?: (code: string) => void; invalid?: boolean; resetKey: number }) {
-  const [vals, setVals] = useState(['', '', '', '', '', '']);
+  const N = OTP_LENGTH, blank = () => Array.from({ length: N }, () => '');
+  const [vals, setVals] = useState(blank);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
-  useEffect(() => { setVals(['', '', '', '', '', '']); onChange?.(''); refs.current[0]?.focus(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setVals(blank()); onChange?.(''); refs.current[0]?.focus(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
   const put = (next: string[], i: number) => { setVals(next); onChange?.(next.every(Boolean) ? next.join('') : ''); if (next.every(Boolean)) onFull?.(next.join('')); else refs.current[i]?.focus(); };
   return (
-    <div className="code" role="group" aria-label="6-digit code">
+    <div className="code" role="group" aria-label={`${N}-digit code`} style={{ ['--n' as string]: N }}>
       {vals.map((v, i) => (
         <input key={i} ref={(el) => { refs.current[i] = el; }} type="text" inputMode="numeric" maxLength={1} aria-label={`Digit ${i + 1}`} autoComplete={i === 0 ? 'one-time-code' : undefined}
           className={v ? 'fill' : ''} value={v} aria-invalid={(i === 0 && invalid) || undefined}
           onChange={(e) => {
             const d = e.target.value.replace(/\D/g, '');
-            if (d.length > 1) { const n = [...vals]; d.slice(0, 6 - i).split('').forEach((c, k) => { n[i + k] = c; }); put(n, Math.min(i + d.length, 5)); return; }
-            const n = [...vals]; n[i] = d; put(n, d ? Math.min(i + 1, 5) : i);
+            if (d.length > 1) { const n = [...vals]; d.slice(0, N - i).split('').forEach((c, k) => { n[i + k] = c; }); put(n, Math.min(i + d.length, N - 1)); return; }
+            const n = [...vals]; n[i] = d; put(n, d ? Math.min(i + 1, N - 1) : i);
           }}
           onKeyDown={(e) => {
             if (e.key === 'Backspace' && !v && i > 0) { const n = [...vals]; n[i - 1] = ''; setVals(n); refs.current[i - 1]?.focus(); e.preventDefault(); }
             if (e.key === 'ArrowLeft' && i > 0) refs.current[i - 1]?.focus();
-            if (e.key === 'ArrowRight' && i < 5) refs.current[i + 1]?.focus();
+            if (e.key === 'ArrowRight' && i < N - 1) refs.current[i + 1]?.focus();
           }}
-          onPaste={(e) => { e.preventDefault(); const d = e.clipboardData.getData('text').replace(/\D/g, ''); const n = [...vals]; d.slice(0, 6 - i).split('').forEach((c, k) => { n[i + k] = c; }); put(n, Math.min(i + d.length, 5)); }} />
+          onPaste={(e) => { e.preventDefault(); const d = e.clipboardData.getData('text').replace(/\D/g, ''); const n = [...vals]; d.slice(0, N - i).split('').forEach((c, k) => { n[i + k] = c; }); put(n, Math.min(i + d.length, N - 1)); }} />
       ))}
     </div>
   );

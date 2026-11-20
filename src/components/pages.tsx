@@ -4,6 +4,7 @@ import { Av } from './chrome';
 import { Dob, Field, Meter, PmcSelect, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
 import { Err } from './err';
+import { OTP_LENGTH } from '@/lib/otp';
 import { AppLogo } from './Logo';
 import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
@@ -160,7 +161,7 @@ export function SecurityPage() {
       catch (e) { fail((e as ApiError).code === 'invalid_credentials' ? 'pw0' : 'form', (e as ApiError).code === 'invalid_credentials' ? 'That is not your current password.' : sayErr(e)); }
       setBusy(false); return;
     }
-    if (!/^\d{6}$/.test(code)) return void fail('code', 'Type the 6 numbers from the email.');
+    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(code)) return void fail('code', `Type the ${OTP_LENGTH} numbers from the email.`);
     setBusy(true);
     try {
       await authed('/auth/v1/user', { method: 'PUT', body: { password: p1, current_password: p0, nonce: code, data: { pw_changed_at: new Date().toISOString() } } });
@@ -191,7 +192,7 @@ export function SecurityPage() {
             ) : (
               <>
                 <p className="hint">We emailed a code to <b>{me?.email}</b>. Type it to finish.</p>
-                <Field id="code" label="Code" error={errors.code}><input id="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, '')); clear('code'); }} aria-invalid={!!errors.code || undefined} /></Field>
+                <Field id="code" label="Code" error={errors.code}><input id="code" inputMode="numeric" autoComplete="one-time-code" maxLength={OTP_LENGTH} autoFocus value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, '')); clear('code'); }} aria-invalid={!!errors.code || undefined} /></Field>
               </>
             )}
             {errors.form ? <Err id="form">{errors.form}</Err> : null}
