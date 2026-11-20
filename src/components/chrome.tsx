@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Ic } from './Ic';
 import { Mark } from './Logo';
+import { ErrSlot } from './err';
 import type { User } from './state';
 
 export function Av({ u }: { u: Pick<User, 'img'> }) {
@@ -36,7 +37,7 @@ let lastHeight = 0;
 let alive = 0;
 let lastGone = 0;
 
-/** Makes the card grow or shrink smoothly whenever its contents change size. */
+/** Makes the card grow or shrink smoothly whenever its contents change size. (When the screen itself changes, the view transition in lib/vt.ts does it instead.) */
 function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: React.RefObject<HTMLDivElement | null>, lead: React.RefObject<HTMLHeadingElement | null>, flow: boolean) {
   useLayoutEffect(() => {
     const el = box.current, content = inner.current, head = lead.current;
@@ -49,7 +50,7 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
       const from = animating ? el.getBoundingClientRect().height : lastHeight;
       el.style.transition = 'none'; el.style.height = 'auto';
       const to = el.getBoundingClientRect().height;
-      if (!calm && fontsReady && from && Math.abs(to - from) > 1) {
+      if (!calm && fontsReady && from && Math.abs(to - from) > 1 && !document.documentElement.classList.contains('vt')) {
         animating = true; el.classList.add('easing');
         el.style.height = from + 'px'; void el.offsetHeight;
         el.style.transition = 'height .38s cubic-bezier(.3,.7,.2,1)'; el.style.height = to + 'px';
@@ -69,6 +70,7 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
 
 export function AuthCard({ title, step, onSubmit, children }: { title: string; step?: number; onSubmit: () => void; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), lead = useRef<HTMLHeadingElement>(null);
+  const [slot, setSlot] = useState<HTMLElement | null>(null); /* errors are shown under the card, not inside the form */
   const [flow] = useState(() => alive > 0 || Date.now() - lastGone < 1500);
   useSmoothHeight(box, inner, lead, flow);
   const { from, leave } = useId_();
@@ -82,9 +84,10 @@ export function AuthCard({ title, step, onSubmit, children }: { title: string; s
             <div className="ht" aria-hidden="true"><i /><i /><i /></div>
             <h1 ref={lead}>{title}</h1>
           </div>
-          <form className="split-r" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}><div className="sr-in" ref={inner}>{children}</div></form>
+          <form className="split-r" noValidate onSubmit={(e) => { e.preventDefault(); onSubmit(); }}><ErrSlot.Provider value={slot}><div className="sr-in" ref={inner}>{children}</div></ErrSlot.Provider></form>
         </div>
-        {step ? <div className="steps" role="img" aria-label={`Step ${step} of 6`}>{[1, 2, 3, 4, 5, 6].map((i) => <i key={i} className={i <= step ? 'on' : ''} />)}</div> : null}
+        {step ? <div className="steps" role="img" aria-label={`Step ${step} of 6`}>{[1, 2, 3, 4, 5, 6].map((i) => <i key={i} className={i < step ? 'on' : i === step ? 'on cur' : ''} />)}</div> : null}
+        <div className="auth-err" ref={setSlot} aria-live="polite" />
       </main>
       <Foot back />
     </div>

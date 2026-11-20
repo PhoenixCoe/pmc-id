@@ -1060,3 +1060,66 @@ a, button, summary, input, select, textarea, [role='button'], [role='tab'], [rol
 @keyframes pmc-shake { 10%, 90% { translate: -2px 0; } 20%, 80% { translate: 5px 0; } 30%, 50%, 70% { translate: -8px 0; } 40%, 60% { translate: 8px 0; } }
 @keyframes pmc-rattle { 20% { transform: translateY(-1.5px) rotate(-8deg); } 45% { transform: rotate(6deg); } 70% { transform: translateY(-1px) rotate(-4deg); } }
 @media (prefers-reduced-motion: reduce) { .lock-sh, .vault-in, .vault-bg::before, .vault-bg::after, .vault-gate, .vault-ic { transition-duration: 0.01s; transition-delay: 0s; } .vault-gate.nope, .vault-gate.nope .lock-sh { animation: none; } }
+
+/* ---------- Changing screens (see lib/vt.ts) ----------
+   The old card, title and form are shown turning into the new ones. The card eases to its new size and place. A new title rolls the
+   old one out upward and rolls in from below inside a hard edge (like the menus); an unchanged title just glides with the card.
+   The form slides out, then the new one slides in. */
+html.vt .split { view-transition-name: pmc-card; }
+html.vt .split-l h1 { view-transition-name: pmc-title; }
+html.vt .sr-in { view-transition-name: pmc-form; }
+html.vt .steps { view-transition-name: pmc-steps; }
+html.vt .auth-top { view-transition-name: pmc-top; }
+html.vt::view-transition-old(root), html.vt::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.vt::view-transition-group(pmc-card), html.vt::view-transition-group(pmc-title), html.vt::view-transition-group(pmc-form),
+html.vt::view-transition-group(pmc-steps), html.vt::view-transition-group(pmc-top) { animation-duration: .52s; animation-timing-function: cubic-bezier(.3,.7,.2,1); }
+html.vt::view-transition-old(pmc-card), html.vt::view-transition-new(pmc-card),
+html.vt::view-transition-old(pmc-steps), html.vt::view-transition-new(pmc-steps),
+html.vt::view-transition-old(pmc-top), html.vt::view-transition-new(pmc-top) { mix-blend-mode: normal; }
+html.vt::view-transition-old(pmc-card), html.vt::view-transition-new(pmc-card) { width: 100%; height: 100%; }
+html.vt::view-transition-old(pmc-card), html.vt::view-transition-old(pmc-steps), html.vt::view-transition-old(pmc-top) { animation: none; }
+html.vt::view-transition-new(pmc-card), html.vt::view-transition-new(pmc-steps), html.vt::view-transition-new(pmc-top) { animation: pmc-vt-in .3s ease-out both; }
+/* something that is only on the old screen fades away instead of staying until the end */
+html.vt::view-transition-old(pmc-card):only-child, html.vt::view-transition-old(pmc-steps):only-child, html.vt::view-transition-old(pmc-top):only-child,
+html.vt::view-transition-old(pmc-title):only-child, html.vt::view-transition-old(pmc-form):only-child { animation: pmc-vt-out .25s ease-in both; }
+html.vt::view-transition-group(pmc-title) { overflow: clip; }
+html.vt::view-transition-old(pmc-title), html.vt::view-transition-new(pmc-title) { width: 100%; height: 100%; object-fit: none; object-position: left bottom; mix-blend-mode: normal; }
+html.vt::view-transition-old(pmc-title) { animation: pmc-roll-out .3s cubic-bezier(.55,0,.85,.35) both; }
+html.vt::view-transition-new(pmc-title) { animation: pmc-roll-in .56s cubic-bezier(.2,.75,.2,1) .2s both; }
+html.vt.vt-same::view-transition-old(pmc-title) { display: none; }
+html.vt.vt-same::view-transition-new(pmc-title) { animation: none; }
+html.vt::view-transition-old(pmc-form), html.vt::view-transition-new(pmc-form) { width: 100%; height: 100%; object-fit: none; object-position: left top; mix-blend-mode: normal; }
+html.vt::view-transition-old(pmc-form) { animation: pmc-form-out .17s ease-in both; }
+html.vt::view-transition-new(pmc-form) { animation: pmc-form-in .44s cubic-bezier(.2,.75,.2,1) .13s both; }
+@keyframes pmc-vt-in { from { opacity: 0; } }
+@keyframes pmc-vt-out { to { opacity: 0; } }
+@keyframes pmc-roll-out { to { transform: translateY(-70%); opacity: 0; } }
+@keyframes pmc-roll-in { from { transform: translateY(70%); opacity: 0; } }
+@keyframes pmc-form-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes pmc-form-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- Step counter ----------
+   Steps you have done are filled green, the step you are on is filled black (it fills in from the left when you arrive), the rest are empty.
+   (They used to be filled with the page colour, so the done steps vanished.) */
+.steps i { background: var(--white); border: 3px solid var(--ink); }
+.steps i.on { background: var(--g1); border-color: var(--ink); }
+.steps i.cur { background: linear-gradient(var(--ink), var(--ink)) no-repeat left center / 100% 100%; border-color: var(--ink); animation: pmc-fill .5s cubic-bezier(.3,.7,.2,1) .25s both; }
+@keyframes pmc-fill { from { background-size: 0 100%; } }
+
+/* ---------- Errors: the small box Coe uses, under the card ----------
+   Red = something needs fixing, orange = it could not get through. The box hangs under the card (and the step counter) without moving
+   anything, and the field that needs fixing keeps its red outline. */
+.auth-mid { padding-bottom: 84px; }
+.auth-err { position: relative; height: 0; margin-top: -34px; align-self: center; width: min(1000px, 100%); }
+.auth-err:empty { display: none; }
+.auth-err .err-box { position: absolute; left: 0; top: 28px; z-index: 2; }
+.err-box { --er: #B03324; --er-d: #7F2218; --er-bg: #FDE6E1; --er-f: #D9503F;
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; width: fit-content; max-width: min(100%, 520px);
+  padding: 8px 12px 9px; background: var(--er-bg); color: var(--er-d); border: 2px solid var(--er-f); border-left: 8px solid var(--er-f); box-shadow: 3px 3px 0 var(--er);
+  animation: up .24s var(--x) backwards; }
+.err-box.orange { --er: #B35514; --er-d: #7A3A0C; --er-bg: #FDEBD6; --er-f: #E8802A; }
+.err-i { grid-row: span 2; width: 24px; height: 24px; display: grid; place-items: center; background: var(--er); color: #fff; font: 400 1.1rem/1 var(--d); align-self: start; margin-top: 1px; }
+.err-box h4 { margin: 0; font-size: 1.12rem; line-height: 1.05; color: var(--er); font-weight: 400; }
+.err-box p { margin: 0; color: var(--er-d); font-size: .92rem; line-height: 1.4; }
+.f .err-box, .sr-in .err-box { margin-top: 2px; }
+@media (max-width: 760px) { .auth-mid { padding-bottom: 96px; } }

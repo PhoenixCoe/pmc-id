@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AuthCard, Acts, Av, BackLink } from './chrome';
 import { CodeBoxes, Dob, Field, Meter, PmcSelect, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
+import { Err } from './err';
 import { keyToPath, linkClick } from '@/lib/route';
 import { useId_, EMPTY_DRAFT } from './state';
 import { ApiError, handBack, getSession, recover, resendSignup, saveSession, sayErr, setPasswordWith, signIn, signUp, toSession, verifyCode, writeProfile } from '@/lib/supabase';
@@ -90,7 +91,7 @@ export function SignIn() {
       {handoff || back ? <p className="lead">to carry on to {(handoff ?? back)!.name}</p> : null}
       <Field id="em" label="Email" error={errors.em}><input id="em" ref={emRef} type="email" autoComplete="username" spellCheck={false} value={em} onChange={(e) => { setEm(e.target.value); clear('em'); }} {...bad('em')} /></Field>
       <Field id="pw" label="Password" error={errors.pw}><PwInput id="pw" inputRef={pwRef} auto="current-password" value={pw} onChange={(v) => { setPw(v); clear('pw'); }} invalid={!!errors.pw} /></Field>
-      {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}
+      {errors.form ? <Err id="form">{errors.form}</Err> : null}
       <p><a className="textlink" href="/reset/" onClick={(e) => linkClick(e, 'reset')}>Forgot your password?</a></p>
       <Acts back={<BackLink to="choose" />} label={busy ? 'Signing in…' : 'Sign in'} />
     </AuthCard>
@@ -143,7 +144,7 @@ export function Reset() {
       ) : (
         <>
           <h2>Make a new password</h2><p className="lead">Type the code we sent to <b>{em}</b>, then a new password.</p>
-          <div className="f"><CodeBoxes onChange={(c) => { setCode(c); if (c) clear('code'); }} invalid={!!errors.code} resetKey={codeKey} />{errors.code ? <p className="err" role="alert">{errors.code}</p> : null}</div>
+          <div className="f"><CodeBoxes onChange={(c) => { setCode(c); if (c) clear('code'); }} invalid={!!errors.code} resetKey={codeKey} />{errors.code ? <Err id="code">{errors.code}</Err> : null}</div>
           <p className="hint">{note || <>Nothing there? Look in junk, or <button className="textlink" type="button" onClick={again} disabled={left > 0}>{left > 0 ? `send a new code (${left})` : 'send a new code'}</button>.</>}</p>
           <Field id="pw" label="New password" error={errors.pw}><PwInput id="pw" auto="new-password" value={pw} onChange={(x) => { setPw(x); clear('pw'); clear('pw2'); }} invalid={!!errors.pw} /></Field>
           <Meter value={pw} />
@@ -231,11 +232,11 @@ export function Create({ n }: { n: number }) {
           <h2>About you</h2>
           <div className="f"><span className="lab" id="dl">Birthday</span>
             <Dob d={v.d} m={v.m} y={v.y} set={(k, val) => set(k)(val)} invalid={!!errors.dd} />
-            {errors.dd ? <p className="err" role="alert">{errors.dd}</p> : null}
+            {errors.dd ? <Err id="dd">{errors.dd}</Err> : null}
           </div>
           <div className="f"><span className="lab" id="gl">Gender</span>
             <PmcSelect id="gen" placeholder="Choose one" options={GENDERS} value={v.gender} onPick={(g) => { set('gender')(g); }} labelledBy="gl" invalid={!!errors['gen-btn']} />
-            {errors['gen-btn'] ? <p className="err" role="alert">{errors['gen-btn']}</p> : null}
+            {errors['gen-btn'] ? <Err id="gen-btn">{errors['gen-btn']}</Err> : null}
           </div>
           <details className="why"><summary><Ic n="help" s={18} />Why we ask</summary><p>Your birthday helps PMC apps fit your age. Gender is optional and never changes what you are shown. Nobody else sees either.</p></details>
         </>
@@ -263,13 +264,13 @@ export function Create({ n }: { n: number }) {
             <div><dt>Birthday</dt><dd>{`${draft.d}/${draft.m}/${draft.y}`} <a className="edit" href={keyToPath('create-2')} onClick={(e) => linkClick(e, 'create-2')}><Ic n="pen" s={14} />Change</a></dd></div>
           </dl></div>
           <p className="hint">Next we email you a code to check the address is yours.</p>
-          {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}
+          {errors.form ? <Err id="form">{errors.form}</Err> : null}
         </>
       )}
       {n === 6 && (
         <>
           <h2>Check your email</h2><p className="lead">Type the code we sent to <b>{draft.email}</b>.</p>
-          <div className="f"><CodeBoxes onFull={(c) => void next(c)} invalid={!!errors.code} resetKey={codeKey} />{errors.code ? <p className="err" role="alert">{errors.code}</p> : null}</div>
+          <div className="f"><CodeBoxes onFull={(c) => void next(c)} invalid={!!errors.code} resetKey={codeKey} />{errors.code ? <Err id="code">{errors.code}</Err> : null}</div>
           <p className="hint">{sent || <>Nothing there? Look in junk, or <button className="textlink" type="button" onClick={again} disabled={left > 0}>{left > 0 ? `send a new code (${left})` : 'send a new code'}</button>.</>}</p>
         </>
       )}
@@ -324,7 +325,7 @@ export function Going() {
     <AuthCard title="You are in" onSubmit={() => undefined}>
       <h2>{done ? 'All done' : 'One moment'}</h2>
       {text ? <p className="lead" role="status">{text}</p> : null}
-      {err ? <p className="err" role="alert">{err}</p> : null}
+      {err ? <Err id="form">{err}</Err> : null}
       {err ? <div className="acts"><button className="btn" type="button" onClick={() => void signOut('signin')}>Sign in again</button><button className="btn primary" type="button" onClick={() => { sent.current = false; setTries(tries + 1); }}>Try again</button></div> : null}
       {handoff.url && !done && session ? <div className="acts"><span /><button className="btn primary" type="button" onClick={run}>Continue to {handoff.name}</button></div> : null}
     </AuthCard>

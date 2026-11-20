@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Av } from './chrome';
 import { Dob, Field, Meter, PmcSelect, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
+import { Err } from './err';
 import { AppLogo } from './Logo';
 import { EdRow, Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
@@ -113,12 +114,12 @@ export function InfoPage() {
             if (!realDate(b.d, b.m, b.y)) return void fail('dd', 'Type a real date: day, month, then the full year.');
             void save({ dob: `${pad2(+b.d)}/${pad2(+b.m)}/${b.y}` }, 'Saved.', 'dd');
           }}>
-            <div className="f"><Dob d={b.d} m={b.m} y={b.y} set={(k, v) => { setB({ ...b, [k]: v }); clear('dd'); }} invalid={!!errors.dd} />{errors.dd ? <p className="err" role="alert">{errors.dd}</p> : null}</div>
+            <div className="f"><Dob d={b.d} m={b.m} y={b.y} set={(k, v) => { setB({ ...b, [k]: v }); clear('dd'); }} invalid={!!errors.dd} />{errors.dd ? <Err id="dd">{errors.dd}</Err> : null}</div>
           </EdRow>
         ) : <Rw label="Birthday" icon="cake" hint="Keeps PMC apps right for your age" val={me.dob || dim} act={<RowBtn label={me.dob ? 'Change' : 'Add'} onClick={() => open('dob')} />} />}
         {ed === 'gender' ? (
           <EdRow label="Gender" form="gender" onCancel={() => setEd(null)} onSubmit={() => { if (!g) return void fail('gen-btn', 'Pick one. "Rather not say" is fine.'); void save({ gender: g }, 'Saved.', 'gen-btn'); }}>
-            <div className="f"><PmcSelect id="gen" placeholder="Choose one" options={GENDERS} value={g} onPick={(v) => { setG(v); clear(); }} invalid={!!errors['gen-btn']} />{errors['gen-btn'] ? <p className="err" role="alert">{errors['gen-btn']}</p> : null}</div>
+            <div className="f"><PmcSelect id="gen" placeholder="Choose one" options={GENDERS} value={g} onPick={(v) => { setG(v); clear(); }} invalid={!!errors['gen-btn']} />{errors['gen-btn'] ? <Err id="gen-btn">{errors['gen-btn']}</Err> : null}</div>
           </EdRow>
         ) : <Rw label="Gender" icon="tag" hint="Optional. Never changes what you see" val={me.gender || dim} act={<RowBtn label={me.gender ? 'Change' : 'Add'} onClick={() => open('gender')} />} />}
         <Rw label="Email" icon="mail" hint="You sign in with this" val={me.email} />
@@ -193,7 +194,7 @@ export function SecurityPage() {
                 <Field id="code" label="Code" error={errors.code}><input id="code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} autoFocus value={code} onChange={(e) => { setCode(e.target.value.replace(/\D/g, '')); clear('code'); }} aria-invalid={!!errors.code || undefined} /></Field>
               </>
             )}
-            {errors.form ? <p className="err" role="alert">{errors.form}</p> : null}
+            {errors.form ? <Err id="form">{errors.form}</Err> : null}
           </EdRow>
         ) : <Rw label="Password" icon="key" hint="Your PMC ID password also locks your wallet" val={<span className="dots-t" aria-hidden="true">••••••••••</span>} act={<RowBtn label="Change" onClick={() => { say(''); setEd('a'); }} />} />}
       </Panel>

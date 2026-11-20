@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from 'react';
 
 import { CREATE, PLAIN } from './paths';
+import { morph } from './vt';
 
 /** Every screen, by the short name the app uses inside. '' is the front page. */
 export const KEYS = ['', 'choose', ...PLAIN, ...CREATE.map((_, i) => 'create-' + (i + 1))];
@@ -21,12 +22,18 @@ export function pathToKey(pathname: string): string {
 }
 
 const EVENT = 'pmc-route';
+/* Every step of making an account has the same title, so only the form changes there. */
+const family = (k: string) => (k.startsWith('create-') ? 'create' : k);
+
 export function navigate(key: string, replace = false): void {
   const q = new URLSearchParams(location.search); q.delete('add');
   const url = keyToPath(key) + (q.toString() ? '?' + q.toString() : '');
   if (url === location.pathname + location.search) return;
-  history[replace ? 'replaceState' : 'pushState'](null, '', url);
-  window.dispatchEvent(new Event(EVENT));
+  const same = family(pathToKey(location.pathname)) === family(key);
+  morph(() => {
+    history[replace ? 'replaceState' : 'pushState'](null, '', url);
+    window.dispatchEvent(new Event(EVENT));
+  }, same);
 }
 
 /** The old #something links keep working: they are turned into the real address once. */

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { ClipboardEvent, KeyboardEvent, ReactNode } from 'react';
 import { STRENGTH_WORDS, strength } from '@/lib/validate';
 import { Ic } from './Ic';
+import { Err } from './err';
 
 /** Errors by field id. fail() shows the message under the field and moves focus to it. */
 export function useErrors() {
@@ -22,7 +23,7 @@ export function Field({ id, label, hint, error, children }: { id?: string; label
     <div className="f">
       {label ? <label htmlFor={id}>{label}{hint ? <> <small>{hint}</small></> : null}</label> : null}
       {children}
-      {error ? <p className="err" role="alert">{error}</p> : null}
+      {error ? <Err id={id}>{error}</Err> : null}
     </div>
   );
 }

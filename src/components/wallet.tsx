@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Field, PwInput, useErrors } from './form';
 import { Ic } from './Ic';
+import { Err } from './err';
 import { Ok, Panel, RowBtn, Rw } from './rows';
 import { useId_ } from './state';
 import { ApiError, readPlan, sayErr, signIn } from '@/lib/supabase';
@@ -152,7 +153,7 @@ export function WalletPage() {
                       <span className="sl">/</span>
                       <input id="xy" inputMode="numeric" maxLength={2} placeholder="YY" aria-label="Year" value={f.yy} onChange={(e) => { setF({ ...f, yy: e.target.value.replace(/\D/g, '') }); clear('xm'); }} />
                     </div>
-                    {errors.xm ? <p className="err" role="alert">{errors.xm}</p> : null}
+                    {errors.xm ? <Err id="xm">{errors.xm}</Err> : null}
                   </div>
                   <div className="f"><label htmlFor="cp">Photo of the card front <small>Optional</small></label>
                     <input id="cp" type="file" accept="image/*" capture="environment" className="filein" onChange={(e) => onPhoto(e.target.files?.[0])} />
