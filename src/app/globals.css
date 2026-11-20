@@ -800,8 +800,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 
 /* ---------- Page motion: pages rise into place with the kit's own curves ---------- */
 .split.in-first { animation: rise .6s var(--x) both; }
-.split.in-flow .sr-in, .split.in-flow .split-l h1 { animation: up .45s var(--x) both; }
-.split.in-flow .sr-in { animation-delay: .05s; }
+/* Moving between steps does not fade or rise anything: the card keeps its place and only its height eases. */
 .steps i { transition: background .3s var(--x); }
 .tb-title { animation: up .4s var(--x) both; }
 .page > .band { animation: rise .6s var(--x) both; }

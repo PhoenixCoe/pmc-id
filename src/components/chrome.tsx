@@ -31,14 +31,17 @@ export function Foot(_: { back?: boolean }) {
 /** The split sign-in card: dark halftone panel on the left, the form on the right. */
 /* The height the last card had, so the next card can ease from it instead of jumping. */
 let lastHeight = 0;
-/* When a card is replaced by the next step within a moment, only its contents slide in. A card arriving fresh rises into place. */
+/* How many cards are on screen, and when the last one left. A card that arrives while another is still there (the next step replaces it in the same moment) or just after one left is a
+   continuation: it does not fade or rise, it just takes the old card's height and eases to its own. Only the first card on a page rises into place. */
+let alive = 0;
 let lastGone = 0;
 
 /** Makes the card grow or shrink smoothly whenever its contents change size. */
-function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: React.RefObject<HTMLDivElement | null>, lead: React.RefObject<HTMLHeadingElement | null>) {
+function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: React.RefObject<HTMLDivElement | null>, lead: React.RefObject<HTMLHeadingElement | null>, flow: boolean) {
   useLayoutEffect(() => {
     const el = box.current, content = inner.current, head = lead.current;
     if (!el || !content || !head) return;
+    if (!flow) lastHeight = 0; /* a card arriving fresh has nothing to ease from */
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let animating = false, fontsReady = document.fonts.status === 'loaded';
     const done = () => { animating = false; el.classList.remove('easing'); el.style.transition = ''; el.style.height = ''; };
@@ -61,15 +64,15 @@ function useSmoothHeight(box: React.RefObject<HTMLDivElement | null>, inner: Rea
     let gone = false;
     document.fonts.ready.then(() => { if (!gone) { fontsReady = true; if (!animating) lastHeight = el.getBoundingClientRect().height; } });
     return () => { gone = true; ro.disconnect(); el.removeEventListener('transitionend', end); };
-  }, [box, inner, lead]);
+  }, [box, inner, lead, flow]);
 }
 
 export function AuthCard({ title, step, onSubmit, children }: { title: string; step?: number; onSubmit: () => void; children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), lead = useRef<HTMLHeadingElement>(null);
-  useSmoothHeight(box, inner, lead);
+  const [flow] = useState(() => alive > 0 || Date.now() - lastGone < 1500);
+  useSmoothHeight(box, inner, lead, flow);
   const { from, leave } = useId_();
-  const [flow] = useState(() => Date.now() - lastGone < 500);
-  useEffect(() => () => { lastGone = Date.now(); }, []);
+  useEffect(() => { alive++; return () => { alive--; lastGone = Date.now(); }; }, []);
   return (
     <div className="auth">
       <main className="auth-mid">
