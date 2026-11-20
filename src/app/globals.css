@@ -813,7 +813,7 @@ a.textlink:focus-visible, button.textlink:focus-visible, .edit:focus-visible, .f
 /* ---------- Help menu, saved accounts, notes ---------- */
 .help { position: relative; display: inline-flex; }
 
-.help-pop { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; width: min(320px, calc(100vw - 32px)); background: var(--paper); border: 4px solid var(--ink); box-shadow: 7px 7px 0 var(--g2); display: grid; animation: up .22s var(--x) both; }
+.help-pop { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; width: min(320px, calc(100vw - 32px)); background: var(--paper); border: 4px solid var(--ink); box-shadow: 7px 7px 0 var(--g2); color: var(--ink); display: grid; }
 .help-h { margin: 0; padding: 12px 16px; font: 400 1.5rem/1 var(--d); text-transform: uppercase; border-bottom: 3px solid var(--ink); }
 .help-pop a { display: flex; align-items: center; gap: 12px; padding: 13px 16px; color: var(--ink); text-decoration: none; font: 400 1.2rem/1.1 var(--d); text-transform: uppercase; border-bottom: 2px solid var(--ink); }
 .help-pop a:last-child { border-bottom: 0; }
@@ -1012,8 +1012,8 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity: 0.4; cu
 @keyframes pmc-pop { from { opacity: 0; transform: translateY(-6px); } }
 html { scroll-behavior: smooth; }
 a, button, summary, input, select, textarea, [role='button'], [role='tab'], [role='menuitem'] { transition: background-color 0.16s var(--x, ease), color 0.16s var(--x, ease), border-color 0.16s var(--x, ease), box-shadow 0.16s var(--x, ease), transform 0.12s var(--x, ease), opacity 0.16s; }
-.help-pop, .ui-menu, .pb-pop { animation: pmc-pop 0.16s var(--x, ease) both; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .help-pop, .ui-menu, .pb-pop { animation: none; } }
+.ui-menu { animation: pmc-pop 0.16s var(--x, ease) both; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .ui-menu { animation: none; } }
 
 /* PMC press: every button lifts on hover and presses down on click, exactly like the account button */
 :is(button,[role=button],input[type=button],input[type=submit],summary,.btn,.pa-btn,.pb-btn,.tb-back,.btn-ic):not(:disabled,[aria-disabled=true],[role=menuitem],[role=option],.pa-row,[style*=transform]){transition-property:transform,box-shadow,background-color,color,border-color,opacity;transition-duration:.14s;transition-timing-function:cubic-bezier(.16,1,.3,1)}
@@ -1022,7 +1022,7 @@ a, button, summary, input, select, textarea, [role='button'], [role='tab'], [rol
 @media (hover:none){:is(button,[role=button],input[type=button],input[type=submit],summary,.btn,.pa-btn,.pb-btn,.tb-back,.btn-ic):not(:disabled,[aria-disabled=true],[role=menuitem],[role=option],.pa-row,[style*=transform]):hover{transform:none!important}}
 @media (prefers-reduced-motion:reduce){:is(button,[role=button],input[type=button],input[type=submit],summary,.btn,.pa-btn,.pb-btn,.tb-back,.btn-ic):not(:disabled,[aria-disabled=true],[role=menuitem],[role=option],.pa-row,[style*=transform]){transform:none!important;transition:none}:is(button,[role=button],input[type=button],input[type=submit],summary,.btn,.pa-btn,.pb-btn,.tb-back,.btn-ic):not(:disabled,[aria-disabled=true],[role=menuitem],[role=option],.pa-row,[style*=transform]):hover,:is(button,[role=button],input[type=button],input[type=submit],summary,.btn,.pa-btn,.pb-btn,.tb-back,.btn-ic):not(:disabled,[aria-disabled=true],[role=menuitem],[role=option],.pa-row,[style*=transform]):active{transform:none!important}}
 .gt .tb-help:hover, .gt .tb-back:hover, .gt .pb-btn:hover, .gt .pa-btn:hover, .gt .pb-btn[aria-expanded=true], .gt .pa-btn[aria-expanded=true] { background: transparent; color: var(--paper); box-shadow: 3px 3px 0 var(--g1); }
-.gt .pa-btn:hover, .gt .pa-btn[aria-expanded=true] { background: var(--pa-cbg, #B49A57); color: var(--pa-cfg, var(--ink)); }
+.gt .pa-btn:hover:not([aria-expanded=true]) { background: var(--pa-cbg, #B49A57); color: var(--pa-cfg, var(--ink)); }
 .gt .tb-help:active, .gt .tb-back:active, .gt .pb-btn:active, .gt .pa-btn:active { box-shadow: 0 0 0 var(--g1); }
 
 /* ---------- Wallet lock: the cards stay blurred until the password is typed ---------- */

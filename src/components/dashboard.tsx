@@ -28,20 +28,24 @@ const HELP: [string, string, string][] = [
 /** A box like the apps button. It opens a short list of the things people ask for most. */
 function HelpMenu() {
   const [open, setOpen] = useState(false);
-  const box = useRef<HTMLSpanElement>(null), btn = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLSpanElement>(null), btn = useRef<HTMLButtonElement>(null), pop = useRef<HTMLDivElement>(null);
+  // The menu rolls out like a scroll (PmcScroll comes with the PMC toolkit); without it the menu just appears and disappears.
+  const scroll = () => (window as unknown as { PmcScroll?: { open(el: HTMLElement): void; shut(el: HTMLElement, done?: () => void): void } }).PmcScroll;
+  useEffect(() => { if (open && pop.current) scroll()?.open(pop.current); }, [open]);
+  const shut = () => { const el = pop.current, s = scroll(); if (el && s) s.shut(el, () => setOpen(false)); else setOpen(false); };
   useEffect(() => {
     if (!open) return;
-    const down = (e: PointerEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btn.current?.focus(); } };
+    const down = (e: PointerEvent) => { if (box.current && !box.current.contains(e.target as Node)) shut(); };
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') { shut(); btn.current?.focus(); } };
     document.addEventListener('pointerdown', down); document.addEventListener('keydown', key);
     return () => { document.removeEventListener('pointerdown', down); document.removeEventListener('keydown', key); };
   }, [open]);
   useEffect(() => { const h = () => setOpen(false); window.addEventListener('pmc-route', h); return () => window.removeEventListener('pmc-route', h); }, []);
   return (
     <span className="help" ref={box}>
-      <button className="tb-help" type="button" ref={btn} aria-label="Help" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(!open)}><Ic n="qm" s={29} /></button>
+      <button className="tb-help" type="button" ref={btn} aria-label="Help" aria-expanded={open} aria-haspopup="true" onClick={() => (open ? shut() : setOpen(true))}><Ic n="qm" s={29} /></button>
       {open ? (
-        <div className="help-pop" role="menu" aria-label="Help">
+        <div className="help-pop" role="menu" aria-label="Help" ref={pop}>
           <p className="help-h">What do you need?</p>
           {HELP.map(([t, k, ic]) => <a key={t} role="menuitem" href={keyToPath(k)} onClick={(e) => linkClick(e, k)}><Ic n={ic} s={18} />{t}</a>)}
           <a role="menuitem" href="https://pmcstudios.uk/privacy" target="_blank" rel="noopener"><Ic n="external" s={18} />Privacy and terms</a>
