@@ -27,7 +27,7 @@ else {
 const nf = await get(SITE + '/this-page-does-not-exist');
 nf.status === 404 ? ok('missing pages show the Not found page') : fix('missing pages do not show a 404 (got ' + nf.status + ')', 'Run npm run build:static again: it writes 404.html.');
 const rb = await get(SITE + '/robots.txt');
-/Disallow:\s*\//.test(rb.text) ? ok('search engines are told to stay out') : fix('robots.txt is missing or open', 'Put public/robots.txt back: User-agent: * and Disallow: /');
+/Disallow:\s*\/\s*$/m.test(rb.text) ? fix('robots.txt blocks search engines', 'Put public/robots.txt back: User-agent: * and Allow: /') : ok('search engines are allowed in');
 
 console.log(bad ? '\n' + bad + ' thing(s) to fix.\n' : '\nAll good.\n');
 process.exit(bad ? 1 : 0);

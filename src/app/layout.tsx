@@ -5,7 +5,6 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'PMC ID',
   description: 'Your PMC ID: one sign in for every PMC app.',
-  robots: { index: false, follow: false },
   referrer: 'no-referrer',
   icons: { icon: '/favicon.svg' },
 };
