@@ -210,7 +210,7 @@ export function SecurityPage() {
 }
 
 /* ---------- Linked apps ---------- */
-const PMC_APPS: { app: 'coe' | 'mini' | 'tools'; label: string }[] = [{ app: 'coe', label: 'Coe' }, { app: 'mini', label: 'Coe Mini' }, { app: 'tools', label: 'PMC Tools' }];
+const PMC_APPS: { app: 'coe' | 'mini' | 'tools' | 'donow'; label: string }[] = [{ app: 'coe', label: 'Coe' }, { app: 'mini', label: 'Coe Mini' }, { app: 'tools', label: 'PMC Tools' }, { app: 'donow', label: 'Do Now' }];
 const day = (v: string) => new Date(v).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 export function AppsPage() {
   const { apps } = useId_();

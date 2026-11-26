@@ -14,6 +14,7 @@ export const APPS: Record<string, { name: string; url?: string; extension?: bool
   tools: { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/' },
   apps: { name: 'PMC Tools', url: 'https://tools.pmcstudios.uk/' },
   studios: { name: 'PMC Studios', url: 'https://pmcstudios.uk/' },
+  donow: { name: 'Do Now', url: 'https://donow.pmcstudios.uk/' },
 };
 
 export class ApiError extends Error {
